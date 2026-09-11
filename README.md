@@ -4,25 +4,6 @@ Automated LLM testing framework for **SecureBank's virtual loan assistant**, bui
 
 ---
 
-## Table of Contents
-
-1. [What is Promptfoo](#what-is-promptfoo)
-2. [Project Structure](#project-structure)
-3. [Prerequisites](#prerequisites)
-4. [API Configuration](#api-configuration)
-5. [How to Run](#how-to-run)
-6. [Test Cases — What Each One Validates](#test-cases--what-each-one-validates)
-7. [Assertions](#assertions)
-8. [Red Teaming — Plugins & Strategies](#red-teaming--plugins--strategies)
-9. [CI/CD Pipelines](#cicd-pipelines)
-10. [Jenkinsfile — Setting Variables](#jenkinsfile--setting-variables)
-11. [GitLab CI — Setting Variables](#gitlab-ci--setting-variables)
-12. [Important Promptfoo CLI Commands](#important-promptfoo-cli-commands)
-13. [Results — Types & Formats](#results--types--formats)
-14. [Troubleshooting Notes](#troubleshooting-notes)
-
----
-
 ## What is Promptfoo
 
 Promptfoo is an **open-source testing and evaluation framework for LLM/GenAI applications.** Think of it as Selenium + JUnit/TestNG, but for AI behavior.
@@ -111,19 +92,13 @@ OPENAI_API_KEY=sk-...your-key...
 LOAN_API_KEY=your-loan-api-bearer-token
 ```
 
-### How the config references them
-
-- `providers[].config.systemPrompt: file://prompts/system-prompt.txt` — loads the system prompt from disk (see [Troubleshooting](#troubleshooting-notes) about this path).
-- `headers.Authorization: "Bearer {{env.LOAN_API_KEY}}"` — Promptfoo's `{{env.VAR_NAME}}` syntax substitutes any environment variable directly into YAML at runtime — use this pattern for any additional secrets (other provider keys, custom endpoints, etc.).
-- `defaultTest.options.provider: openai:gpt-4o-mini` — this is the **grading/judge model** used to evaluate `llm-rubric` assertions; it also needs `OPENAI_API_KEY`.
-
 ### Local: Permanent (Windows)
 
 Persists across sessions.
 
 ```powershell
 [System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-...", "User")
-
+```
 
 ---
 
