@@ -200,19 +200,6 @@ Each assertion can also set a `weight` (for weighted scoring) and a custom `thre
 
 ---
 
-## Red Teaming — Plugins & Strategies
-
-### What is red teaming (in Promptfoo)
-
-`promptfoo redteam` is Promptfoo's **automated adversarial testing** feature. Instead of you writing test cases by hand, you describe the system's `purpose` in plain English, and Promptfoo:
-
-1. **Generates attack payloads** automatically using configured **plugins** (attack categories — jailbreaks, PII extraction, hallucination bait, etc.).
-2. **Applies strategies** — transformation/delivery techniques that wrap or mutate the base attacks (e.g., multi-turn escalation, injected instructions) to see if they bypass the target's safeguards.
-3. Sends everything to the target provider and **grades whether the attack succeeded** (i.e., whether the model violated its intended behavior).
-4. Outputs a **vulnerability report** showing which plugin/strategy combinations broke through, so you can harden the system prompt or add guardrails.
-
-This is analogous to running an automated pen-test against your LLM app/prompt instead of manually crafting jailbreak attempts.
-
 ### Plugins configured in `redteam.yaml`
 
 | Plugin | Attack category |
@@ -238,10 +225,6 @@ This is analogous to running an automated pen-test against your LLM app/prompt i
 | `prompt-injection` | Wraps base attacks by **embedding injected instructions inside user input** (e.g., "ignore previous instructions and...") |
 
 > Promptfoo also supports other strategies not enabled here, e.g. `basic`, `crescendo` (gradual escalation), `goat`, `best-of-n`, `multilingual` (attacks translated into other languages), `leetspeak`/`base64`/`rot13` (obfuscation encodings), `composite` (chains multiple strategies), and `retry` (re-runs failed strategies with mutations) — useful to add if you want deeper coverage.
-
-### `purpose` field
-
-`redteam.purpose` is the plain-English description Promptfoo uses to **auto-generate contextually relevant attacks** for this specific system (a SecureBank loan assistant that must never guarantee approval, collect PII, fabricate rates, or leak internals). The more precise this description, the more targeted the generated attacks are.
 
 ---
 
