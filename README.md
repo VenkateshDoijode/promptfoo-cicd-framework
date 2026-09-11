@@ -117,6 +117,14 @@ LOAN_API_KEY=your-loan-api-bearer-token
 - `headers.Authorization: "Bearer {{env.LOAN_API_KEY}}"` — Promptfoo's `{{env.VAR_NAME}}` syntax substitutes any environment variable directly into YAML at runtime — use this pattern for any additional secrets (other provider keys, custom endpoints, etc.).
 - `defaultTest.options.provider: openai:gpt-4o-mini` — this is the **grading/judge model** used to evaluate `llm-rubric` assertions; it also needs `OPENAI_API_KEY`.
 
+### Local: Permanent (Windows)
+
+Persists across sessions.
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-...", "User")
+
+
 ---
 
 ## How to Run
