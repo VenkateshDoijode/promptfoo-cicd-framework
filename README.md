@@ -403,23 +403,6 @@ This project standardizes on **JSON**, written to `results/eval-results.json` an
 
 ---
 
-#  One technical point I would definitely verify
-
-You have:
-
-> `promptfoo eval --fail-threshold 0.8`  
-> "Exits non-zero if the overall pass rate is below 80%." 
-
-Make sure this exactly matches the Promptfoo version you're targeting and the semantics of `--fail-threshold`.
-
-Similarly, verify the exact availability/behavior of every CLI command in your current Promptfoo version, particularly:
-
-```text
-promptfoo share
-promptfoo cache clear
-promptfoo view --file
-promptfoo redteam generate
----
 ## Test Reports
 
 ### Promptfoo Evaluation Report
@@ -436,3 +419,4 @@ The security report provides a visual summary of the red-team evaluation,
 including adversarial test results and identified security vulnerabilities.
 
 ![Promptfoo Red Team Security Report](results/secuity_vulnerability_report.jpg)
+
