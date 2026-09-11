@@ -350,14 +350,12 @@ variables:
 
 ### Output formats
 
-Promptfoo can write results in several formats via `--output <file>`, inferred from the file extension:
-
-| Format | Extension | Use case |
-|---|---|---|
-| JSON | `.json` | Machine-readable — used by both pipelines here for CI artifacts and programmatic parsing |
-| CSV | `.csv` | Spreadsheet-friendly summary |
-| HTML | `.html` | Self-contained shareable report with formatting |
-| YAML | `.yaml` | Human-readable structured output |
+| Flag | File | Format | Description |
+|---|---|---|---|
+| `--output results/eval-results.json` | `eval-results.json` | JSON | Machine-readable — used by both pipelines here for CI artifacts and programmatic parsing |
+| `--output results/eval-results.csv` | `eval-results.csv` | CSV | Spreadsheet-friendly |
+| `--output results/eval-results.html` | `eval-results.html` | HTML | Standalone browser report |
+| `--output results/eval-results.yaml` | `eval-results.yaml` | YAML | Human-readable |
 
 This project standardizes on **JSON**, written to `results/eval-results.json` and `results/redteam-results.json`.
 
