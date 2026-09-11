@@ -1,16 +1,35 @@
+
 # Promptfoo CI/CD Framework
 
-[![CI](https://img.shields.io/badge/CI-GitLab%20CI-orange)]
-[![Jenkins](https://img.shields.io/badge/CI-Jenkins-red)]
-[![Promptfoo](https://img.shields.io/badge/LLM%20Testing-Promptfoo-blue)]
-[![License](https://img.shields.io/badge/License-MIT-green)]
+[![CI](https://img.shields.io/badge/CI-GitLab%20CI-orange)](https://img.shields.io/badge/CI-GitLab%20CI-orange)
+[![Jenkins](https://img.shields.io/badge/CI-Jenkins-red)](https://img.shields.io/badge/CI-Jenkins-red)
+[![Promptfoo](https://img.shields.io/badge/LLM%20Testing-Promptfoo-blue)](https://img.shields.io/badge/LLM%20Testing-Promptfoo-blue)
+[![License](https://img.shields.io/badge/License-MIT-green)](https://img.shields.io/badge/License-MIT-green)
 
 Automated LLM testing framework for **SecureBank's virtual loan assistant**, built on [Promptfoo](https://www.promptfoo.dev/). It runs quality/regression evals and red team (adversarial safety) scans automatically in CI/CD (Jenkins and GitLab CI), so every prompt/system-prompt change is checked for correctness, safety, and policy compliance before it ships.
 
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/VenkateshDoijode/promptfoo-cicd-framework.git
+cd promptfoo-cicd-framework
+npm install -g promptfoo
+
+export OPENAI_API_KEY="sk-...your-key..."
+
+promptfoo eval --config promptfooconfig.fast.yaml --no-cache --output results/eval-results.json
+promptfoo view
+```
+
+That runs the fast PR-gate eval (2 providers, 4 critical tests) and opens the interactive results dashboard in your browser. See [How to Run](#how-to-run) for the full eval, red team scan, and CI-threshold options.
+
+---
+
 ## What This Project Demonstrates
 
-This project demonstrates an end-to-end approach to testing and securing
-LLM-based applications:
+This project demonstrates an end-to-end approach to testing and securing LLM-based applications:
 
 - LLM functional and regression testing
 - Prompt validation
@@ -21,21 +40,19 @@ LLM-based applications:
 - Hallucination detection
 - Excessive-agency testing
 - API-based LLM evaluation
-- CI/CD quality gates
-- Jenkins pipeline automation
-- GitLab CI automation
+- CI/CD quality gates (Jenkins + GitLab CI)
 - Automated JSON test reporting
 - Multi-model evaluation
-  
+
 ---
 
 ## What is Promptfoo
 
-Promptfoo is an **open-source testing and evaluation framework for LLM/GenAI applications.** Think of it as Selenium + JUnit/TestNG, but for AI behavior.
-It lets you systematically test prompts, models, RAG pipelines, and AI agents instead of manually checking whether an AI response “looks good.” It also supports automated red teaming/security testing. Promptfoo supports assertions/metrics so you can automatically determine pass/fail instead of manually reviewing every response.
+Promptfoo is an **open-source testing and evaluation framework for LLM/GenAI applications** — think Selenium + JUnit/TestNG, but for AI behavior. It lets you systematically test prompts, models, RAG pipelines, and AI agents instead of manually checking whether a response "looks good," and it supports assertions/metrics so pass/fail is determined automatically. It also supports automated red teaming/security testing.
 
-**LLM red teaming(penetration testing for an AI system)** is the process of intentionally attacking an LLM application with adversarial prompts and scenarios to identify vulnerabilities such as prompt injection, jailbreaks, data leakage, hallucinations, bias, excessive agency and tool misuse.
-## Common LLM Red Teaming Areas
+**LLM red teaming** (penetration testing for an AI system) is the process of intentionally attacking an LLM application with adversarial prompts and scenarios to identify vulnerabilities such as prompt injection, jailbreaks, data leakage, hallucinations, bias, excessive agency, and tool misuse.
+
+### Common LLM Red Teaming Areas
 
 | Area | Attack Example | What You're Testing |
 |---|---|---|
@@ -70,6 +87,7 @@ promptfoo-cicd-framework-main/
 │   └── .gitkeep                    # Eval/redteam JSON output is written here at runtime (gitignored)
 └── README.md
 ```
+
 ---
 
 ## Prerequisites
@@ -81,14 +99,14 @@ promptfoo-cicd-framework-main/
 
 Install Promptfoo globally:
 
-```bash
+```
 npm install -g promptfoo
 promptfoo --version
 ```
 
 Or run without installing, via `npx`:
 
-```bash
+```
 npx promptfoo@latest eval --config promptfooconfig.yaml
 ```
 
@@ -112,14 +130,12 @@ export LOAN_API_KEY="your-loan-api-bearer-token"   # only needed for the fast co
 
 Or create a `.env` file in the project root (Promptfoo auto-loads it):
 
-```dotenv
+```
 OPENAI_API_KEY=sk-...your-key...
 LOAN_API_KEY=your-loan-api-bearer-token
 ```
 
-### Local: Permanent (Windows)
-
-Persists across sessions.
+**Windows (persist across sessions):**
 
 ```powershell
 [System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-...", "User")
@@ -129,37 +145,38 @@ Persists across sessions.
 
 ## How to Run
 
-### 1. Full quality/regression eval (all 4 models, all 24 tests)
+**1. Full quality/regression eval** (all 4 models, all 24 tests)
 
-```bash
+```
 promptfoo eval --config promptfooconfig.yaml --no-cache --output results/eval-results.json
 ```
 
-### 2. Fast eval (PR gate — critical tests only, 2 providers)
+**2. Fast eval** (PR gate — critical tests only, 2 providers)
 
-```bash
+```
 promptfoo eval --config promptfooconfig.fast.yaml --no-cache --output results/eval-results.json
 ```
 
-### 3. Red team / adversarial safety scan
+**3. Red team / adversarial safety scan**
 
-```bash
+```
 promptfoo redteam run --config redteam.yaml --no-cache --output results/redteam-results.json
 ```
 
-### 4. View results in the interactive web UI
+**4. View results in the interactive web UI**
 
-```bash
+```
 promptfoo view
 ```
 
-This opens a local browser dashboard showing pass/fail per test, per provider, with full diffs and rubric reasoning.
+Opens a local browser dashboard showing pass/fail per test, per provider, with full diffs and rubric reasoning.
 
-### 5. Fail the build on a quality threshold (used in CI)
+**5. Fail the build on a quality threshold** (used in CI)
 
-```bash
+```
 promptfoo eval --config promptfooconfig.yaml --fail-threshold 0.8
 ```
+
 Exits non-zero if the overall pass rate is below 80%, making it suitable as a CI gate.
 
 ---
@@ -177,36 +194,27 @@ An **assertion** in Promptfoo is a rule attached to a test case that scores the 
 | `contains` | `value: "support@securebank.com"` | Deterministic substring check — passes only if the string is present. Used to guarantee the escalation email is actually included. |
 | `javascript` | `/(fraud\|contact\|support\|immediately\|helpline)/i.test(output)` | Runs inline JS against the `output` variable; returns truthy/falsy → pass/fail. Used for flexible regex pattern matching. |
 
-### Types of assertions available in Promptfoo (reference)
+### Other assertion types available in Promptfoo (reference)
 
 Promptfoo supports many more assertion types beyond what's used here — useful when extending this suite:
 
 **Deterministic / string-based**
-- `equals`, `contains`, `not-contains`, `icontains` (case-insensitive), `regex`, `starts-with`, `contains-all`, `contains-any`
+`equals`, `contains`, `not-contains`, `icontains` (case-insensitive), `regex`, `starts-with`, `contains-all`, `contains-any`
 
 **Structured / format**
-- `is-json`, `is-xml`, `is-sql`, `contains-json`, `javascript`, `python` — validate structure or run custom code
-- `latency` — response time threshold
-- `cost` — token-cost threshold
-- `perplexity`, `perplexity-score` — model confidence metrics
+`is-json`, `is-xml`, `is-sql`, `contains-json`, `javascript`, `python` (validate structure or run custom code) · `latency` (response time threshold) · `cost` (token-cost threshold) · `perplexity`, `perplexity-score` (model confidence metrics)
 
 **Semantic / model-graded**
-- `llm-rubric` — natural-language rubric graded by an LLM judge (used throughout this project)
-- `answer-relevance` — checks the answer addresses the question
-- `context-recall`, `context-relevance`, `context-faithfulness` — RAG-specific groundedness checks
-- `factuality` — compares output against a reference answer for factual accuracy
-- `similar` — embedding-based semantic similarity to an expected value
-- `classifier` — routes output through a classification model (e.g., toxicity, sentiment)
-- `moderation` — runs output through a content-moderation API (e.g., OpenAI moderation)
-- `select-best` — compares multiple outputs and picks the best per a rubric
-- `g-eval` — structured multi-criteria LLM grading (GPT-eval style)
+`llm-rubric` (used throughout this project) · `answer-relevance` · `context-recall`, `context-relevance`, `context-faithfulness` (RAG-specific groundedness) · `factuality` · `similar` (embedding-based similarity) · `classifier` (e.g., toxicity, sentiment) · `moderation` (content-moderation API) · `select-best` · `g-eval` (structured multi-criteria LLM grading)
 
 **Model comparison**
-- `model-graded-closedqa`, `model-graded-factuality` — legacy/alternate names for LLM-graded checks
+`model-graded-closedqa`, `model-graded-factuality` — legacy/alternate names for LLM-graded checks
 
 Each assertion can also set a `weight` (for weighted scoring) and a custom `threshold` for numeric-score assertion types.
 
 ---
+
+## Red Teaming Configuration
 
 ### Plugins configured in `redteam.yaml`
 
@@ -240,6 +248,8 @@ Each assertion can also set a `weight` (for weighted scoring) and a custom `thre
 
 This project ships two parallel pipeline definitions doing the same job for two different CI systems: **GitLab CI** (`.gitlab-ci.yml`) and **Jenkins** (`Jenkinsfile`).
 
+Both pipelines follow the same pattern: **fast, blocking quality eval on every change → expensive, non-blocking red team scan reserved for `main`.**
+
 ### `.gitlab-ci.yml` — stages & jobs
 
 | Stage | Job | Runs when | Behavior |
@@ -247,6 +257,24 @@ This project ships two parallel pipeline definitions doing the same job for two 
 | `eval` | `llm-eval` | On merge requests **and** pushes to the default branch | Installs Promptfoo, runs `promptfoo eval` against `promptfooconfig.yaml`, fails the pipeline if pass rate < 80% (`--fail-threshold 0.8`). Uploads `results/eval-results.json` as a 30-day artifact. `allow_failure: false` → this **blocks** the merge/pipeline. |
 | `redteam` | `llm-redteam` | On the default branch, or manually triggered | Runs `promptfoo redteam run` against `redteam.yaml`. Uploads `results/redteam-results.json` as an artifact. `allow_failure: true` → findings are reviewed manually, doesn't hard-block. |
 | `redteam` | `view-results` | Manual only | Prints a quick pass/fail/total summary of `eval-results.json` by parsing the JSON with Python, and offers `promptfoo view` for local inspection. |
+
+**Setting variables in GitLab:**
+
+The `.gitlab-ci.yml` relies on `OPENAI_API_KEY` being present in the environment but does not define it inline (by design, so the secret never lives in the repo).
+
+1. Go to your project → **Settings → CI/CD → Variables**.
+2. Click **Add variable**.
+3. Key: `OPENAI_API_KEY` · Value: your OpenAI API key.
+4. Check **Mask variable** (hides it in job logs) and **Protect variable** (only exposed on protected branches/tags — recommended since `main` triggers the red team scan), as noted in the comments of `.gitlab-ci.yml`.
+5. Save. Repeat for `LOAN_API_KEY` if you plan to run `promptfooconfig.fast.yaml`'s live HTTP provider in CI.
+
+Pipeline-level variables like `NODE_VERSION` and `PROMPTFOO_VERSION` are already defined in the `variables:` block of `.gitlab-ci.yml` itself and can be overridden per-pipeline (Run pipeline → add variable) without editing the file:
+
+```yaml
+variables:
+  NODE_VERSION: "20"
+  PROMPTFOO_VERSION: "latest"
+```
 
 ### `Jenkinsfile` — stages
 
@@ -256,11 +284,9 @@ This project ships two parallel pipeline definitions doing the same job for two 
 | `LLM Quality Eval` | Every build | Runs `promptfoo eval` against `promptfooconfig.yaml` with `--fail-threshold 0.8`; archives `results/eval-results.json`; echoes a warning on failure |
 | `LLM Red Team Safety Scan` | **Only on the `main` branch** (`when { branch 'main' }`) | Runs `promptfoo redteam run` against `redteam.yaml`; archives `results/redteam-results.json` |
 
-Both pipelines follow the same pattern: **fast, blocking quality eval on every change → expensive, non-blocking red team scan reserved for `main`.**
+**Pipeline flow:** Checkout → Install → Test → Report → Pass/Fail
 
----
-
-## Jenkinsfile — How to Set Variables
+**Setting variables in Jenkins:**
 
 The Jenkinsfile references a credential:
 
@@ -270,16 +296,12 @@ environment {
 }
 ```
 
-**Steps to configure in Jenkins:**
-
 1. Go to **Manage Jenkins → Credentials → System → Global credentials (unrestricted)**.
-2. Click **Add Credentials**.
-3. Kind: **Secret text**.
-4. Secret: paste your OpenAI API key.
-5. ID: `OPENAI_API_KEY` (must match exactly what's referenced in the `credentials()` call in the Jenkinsfile).
-6. Save.
+2. Click **Add Credentials**. Kind: **Secret text**.
+3. Secret: paste your OpenAI API key. ID: `OPENAI_API_KEY` (must match exactly what's referenced in the `credentials()` call in the Jenkinsfile).
+4. Save.
 
-To add the `LOAN_API_KEY` (needed only if you also run `promptfooconfig.fast.yaml` from Jenkins), add another **Secret text** credential with ID `LOAN_API_KEY`, then reference it in the `environment {}` block:
+To add `LOAN_API_KEY` (needed only if you also run `promptfooconfig.fast.yaml` from Jenkins), add another **Secret text** credential with ID `LOAN_API_KEY`, then reference it alongside the existing variable:
 
 ```groovy
 environment {
@@ -290,64 +312,30 @@ environment {
 
 Jenkins injects these as real environment variables for every `sh` step, so Promptfoo picks them up automatically (no extra flags needed).
 
-## Jenkins Pipeline Job — Short Steps
+**Creating the Jenkins pipeline job:**
 
 1. **New Item → Pipeline**
 2. Select **Pipeline script from SCM**
-3. Select **Git** → Add repository URL
+3. Select **Git** → add repository URL
 4. Set branch: `main`
 5. Set **Script Path:** `Jenkinsfile`
 6. Click **Save → Build Now**
-
-### Pipeline Flow
-
-**Checkout → Install → Test → Report → Pass/Fail**
----
-
-## GitLab CI — How to Set Variables
-
-The `.gitlab-ci.yml` relies on `OPENAI_API_KEY` being present in the environment but does not define it inline (by design, so the secret never lives in the repo).
-
-**Steps to configure in GitLab:**
-
-1. Go to your project → **Settings → CI/CD → Variables**.
-2. Click **Add variable**.
-3. Key: `OPENAI_API_KEY`
-4. Value: your OpenAI API key
-5. Check **Mask variable** (hides it in job logs) and **Protect variable** (only exposed on protected branches/tags — recommended since `main` triggers the red team scan) — as noted in the comments of `.gitlab-ci.yml`.
-6. Save.
-
-Repeat the same steps for `LOAN_API_KEY` if you plan to run `promptfooconfig.fast.yaml`'s live HTTP provider in CI.
-
-Pipeline-level variables like `NODE_VERSION` and `PROMPTFOO_VERSION` are already defined in the `variables:` block of `.gitlab-ci.yml` itself and can be overridden per-pipeline (Run pipeline → add variable) without editing the file:
-
-```yaml
-variables:
-  NODE_VERSION: "20"
-  PROMPTFOO_VERSION: "latest"
-```
 
 ---
 
 ## Important Promptfoo CLI Commands
 
+Beyond the commands already shown in [How to Run](#how-to-run), these are useful for day-to-day work:
+
 | Command | Purpose |
 |---|---|
 | `promptfoo init` | Scaffold a new Promptfoo project interactively |
-| `promptfoo eval` | Run the eval defined in `promptfooconfig.yaml` (or `-c <file>`) |
-| `promptfoo eval -c promptfooconfig.fast.yaml` | Run a specific config file |
-| `promptfoo eval --no-cache` | Force fresh model calls, bypassing the local response cache |
-| `promptfoo eval --output results/eval-results.json` | Write results to a JSON file |
-| `promptfoo eval --output results.csv` | Export results as CSV |
-| `promptfoo eval --fail-threshold 0.8` | Exit non-zero if pass rate < 80% — use for CI gating |
 | `promptfoo eval -j 4` | Run with 4 parallel concurrent requests |
 | `promptfoo eval --filter-pattern "PII"` | Only run tests whose description matches a pattern |
-| `promptfoo view` | Launch the local web UI to browse the latest results |
+| `promptfoo eval --output results.csv` | Export results as CSV instead of JSON |
 | `promptfoo view --file results/eval-results.json` | View a specific results file |
 | `promptfoo redteam init` | Scaffold a new red team config interactively |
 | `promptfoo redteam generate` | Generate adversarial test cases without running them |
-| `promptfoo redteam run` | Generate attacks **and** execute them against the target, in one step |
-| `promptfoo redteam run -c redteam.yaml --output results/redteam-results.json` | Run red team with a specific config + output path |
 | `promptfoo share` | Upload results and get a shareable link (disabled here via `sharing: false`) |
 | `promptfoo cache clear` | Clear the local response cache |
 | `promptfoo --version` | Print the installed Promptfoo version |
@@ -400,23 +388,26 @@ This project standardizes on **JSON**, written to `results/eval-results.json` an
 - **Per-test `success`/`score`** — whether that specific test case passed, and its numeric score (relevant when assertions are weighted).
 - **`gradingResult.componentResults`** — a breakdown per assertion (e.g., the `llm-rubric` result and the `not-contains` result are reported separately), including the judge model's reasoning text for `llm-rubric`.
 
-
 ---
 
 ## Test Reports
 
 ### Promptfoo Evaluation Report
 
-The following report provides a visual summary of the Promptfoo evaluation results,
-including test execution status, scores, assertions, providers, and individual
-test results.
+The following report provides a visual summary of the Promptfoo evaluation results, including test execution status, scores, assertions, providers, and individual test results.
 
-![Promptfoo Evaluation Report](results/htmlreport.jpg)
+[![Promptfoo Evaluation Report](https://github.com/VenkateshDoijode/promptfoo-cicd-framework/raw/main/results/htmlreport.jpg)](/VenkateshDoijode/promptfoo-cicd-framework/blob/main/results/htmlreport.jpg)
 
 ### Security Vulnerability / Red Team Report
 
-The security report provides a visual summary of the red-team evaluation,
-including adversarial test results and identified security vulnerabilities.
+The security report provides a visual summary of the red-team evaluation, including adversarial test results and identified security vulnerabilities.
 
-![Promptfoo Red Team Security Report](results/secuity_vulnerablitity_report.jpg)
+[![Promptfoo Red Team Security Report](https://github.com/VenkateshDoijode/promptfoo-cicd-framework/raw/main/results/secuity_vulnerablitity_report.jpg)](/VenkateshDoijode/promptfoo-cicd-framework/blob/main/results/secuity_vulnerablitity_report.jpg)
 
+> Note: the image file above is named `secuity_vulnerablitity_report.jpg` in the repo (typo in the filename). Consider renaming it to `security_vulnerability_report.jpg` and updating this link to match.
+
+---
+
+## License
+
+MIT — see the `LICENSE` file for details.
