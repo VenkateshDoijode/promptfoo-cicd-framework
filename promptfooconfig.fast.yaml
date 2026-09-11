@@ -10,7 +10,7 @@ providers:
   - id: openai:gpt-4o
     label: "GPT-4o (OpenAI)"
     config:
-      systemPrompt: file://prompts/system-prompt.txt
+      systemPrompt: file://prompt/system-prompt.txt
       temperature: 0
       max_tokens: 300
       seed: 42
