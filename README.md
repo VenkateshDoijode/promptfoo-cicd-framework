@@ -418,5 +418,5 @@ test results.
 The security report provides a visual summary of the red-team evaluation,
 including adversarial test results and identified security vulnerabilities.
 
-![Promptfoo Red Team Security Report](results/secuity_vulnerability_report.jpg)
+![Promptfoo Red Team Security Report](results/secuity_vulnerablitity_report.jpg)
 
