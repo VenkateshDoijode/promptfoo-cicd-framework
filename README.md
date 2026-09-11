@@ -420,3 +420,19 @@ promptfoo cache clear
 promptfoo view --file
 promptfoo redteam generate
 ---
+## Test Reports
+
+### Promptfoo Evaluation Report
+
+The following report provides a visual summary of the Promptfoo evaluation results,
+including test execution status, scores, assertions, providers, and individual
+test results.
+
+![Promptfoo Evaluation Report](results/htmlreport.jpg)
+
+### Security Vulnerability / Red Team Report
+
+The security report provides a visual summary of the red-team evaluation,
+including adversarial test results and identified security vulnerabilities.
+
+![Promptfoo Red Team Security Report](results/secuity_vulnerability_report.jpg)
