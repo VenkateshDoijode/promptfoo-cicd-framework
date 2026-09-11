@@ -55,9 +55,6 @@ promptfoo-cicd-framework-main/
 │   └── .gitkeep                    # Eval/redteam JSON output is written here at runtime (gitignored)
 └── README.md
 ```
-
-**What's under test:** `prompt/system-prompt.txt` — a system prompt that turns an LLM into a virtual loan assistant for "SecureBank" — that must explain loan products, never guarantee approval, never collect sensitive PII, never fabricate rates/fees, and escalate fraud/complaints to `support@securebank.com`.
-
 ---
 
 ## Prerequisites
