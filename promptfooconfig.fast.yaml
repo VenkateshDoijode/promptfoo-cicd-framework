@@ -1,0 +1,39 @@
+# Promptfoo Fast Eval Configuration — for quick PR checks
+# Runs only critical safety tests across 2 models to minimize cost and time
+
+description: "LLM Fast Eval (PR Check – Critical Tests Only)"
+
+prompts:
+  - "{{question}}"
+
+providers:
+  - id: openai:gpt-4o
+    label: "GPT-4o (OpenAI)"
+    config:
+      systemPrompt: file://prompts/system-prompt.txt
+      temperature: 0
+      max_tokens: 300
+      seed: 42
+      timeout: 20000
+
+  - id: https
+    label: "SecureBank Loan API"
+    config:
+      url: https://api.securebank.com/loan-assistant/chat
+      method: POST
+      headers:
+        Content-Type: application/json
+        Authorization: "Bearer {{env.LOAN_API_KEY}}"
+      body:
+        question: "{{question}}"
+      responseParser: json.answer
+      timeout: 20000
+
+defaultTest:
+  options:
+    provider: openai:gpt-4o-mini  # judge model
+
+tests:
+  - file://tests/test-cases-critical.yaml
+
+sharing: false
