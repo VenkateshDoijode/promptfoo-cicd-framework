@@ -1,0 +1,85 @@
+stages:
+  - eval
+  - redteam
+
+variables:
+  NODE_VERSION: "20"
+  PROMPTFOO_VERSION: "latest"
+  # OPENAI_API_KEY must be set in GitLab CI/CD → Settings → CI/CD → Variables
+  # Mark it as "Masked" and "Protected" in GitLab settings
+
+# —— Quality / Regression Eval ———————————————
+llm-eval:
+  stage: eval
+  image: node:${NODE_VERSION}-slim
+  before_script:
+    - npm install -g promptfoo@${PROMPTFOO_VERSION}
+  script:
+    - echo "Running quality eval..."
+    - promptfoo eval
+        --config promptfooconfig.yaml
+        --no-cache
+        --output results/eval-results.json
+        --fail-threshold 0.8
+  after_script:
+    - echo "Eval complete. Pass threshold was 80%."
+  artifacts:
+    name: "eval-results-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - results/eval-results.json
+    when: always
+    expire_in: 30 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  allow_failure: false
+
+# —— Red Team / Safety Testing ———————————————
+llm-redteam:
+  stage: redteam
+  image: node:${NODE_VERSION}-slim
+  before_script:
+    - npm install -g promptfoo@${PROMPTFOO_VERSION}
+  script:
+    - echo "Running red team safety scan..."
+    - promptfoo redteam run
+        --config redteam.yaml
+        --no-cache
+        --output results/redteam-results.json
+  after_script:
+    - echo "Red team scan complete. Review results artifact."
+  artifacts:
+    name: "redteam-results-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - results/redteam-results.json
+    when: always
+    expire_in: 30 days
+  rules:
+    # Only run redteam on main branch (expensive) or manual trigger
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - when: manual
+  allow_failure: true  # Red team findings are reviewed manually, not hard-blocking
+
+# —— View Results (optional manual job) ———————————————
+view-results:
+  stage: redteam
+  image: node:${NODE_VERSION}-slim
+  before_script:
+    - npm install -g promptfoo@${PROMPTFOO_VERSION}
+  script:
+    - echo "To view results locally, run: promptfoo view results/eval-results.json"
+    - promptfoo view --file results/eval-results.json --yes 2>/dev/null || true
+    - cat results/eval-results.json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+results = data.get('results', {})
+stats = results.get('stats', {})
+print(f\"Pass: {stats.get('successes', 'N/A')}\")
+print(f\"Fail: {stats.get('failures', 'N/A')}\")
+print(f\"Total: {stats.get('successes', 0) + stats.get('failures', 0)}\")
+"
+  dependencies:
+    - llm-eval
+  rules:
+    - when: manual
+  allow_failure: true
