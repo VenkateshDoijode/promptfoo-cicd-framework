@@ -282,6 +282,18 @@ environment {
 
 Jenkins injects these as real environment variables for every `sh` step, so Promptfoo picks them up automatically (no extra flags needed).
 
+## Jenkins Pipeline Job — Short Steps
+
+1. **New Item → Pipeline**
+2. Select **Pipeline script from SCM**
+3. Select **Git** → Add repository URL
+4. Set branch: `main`
+5. Set **Script Path:** `Jenkinsfile`
+6. Click **Save → Build Now**
+
+### Pipeline Flow
+
+**Checkout → Install → Test → Report → Pass/Fail**
 ---
 
 ## GitLab CI — How to Set Variables
