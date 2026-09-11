@@ -1,5 +1,10 @@
 # Promptfoo CI/CD Framework
 
+[![CI](https://img.shields.io/badge/CI-GitLab%20CI-orange)]
+[![Jenkins](https://img.shields.io/badge/CI-Jenkins-red)]
+[![Promptfoo](https://img.shields.io/badge/LLM%20Testing-Promptfoo-blue)]
+[![License](https://img.shields.io/badge/License-MIT-green)]
+
 Automated LLM testing framework for **SecureBank's virtual loan assistant**, built on [Promptfoo](https://www.promptfoo.dev/). It runs quality/regression evals and red team (adversarial safety) scans automatically in CI/CD (Jenkins and GitLab CI), so every prompt/system-prompt change is checked for correctness, safety, and policy compliance before it ships.
 
 ## What This Project Demonstrates
