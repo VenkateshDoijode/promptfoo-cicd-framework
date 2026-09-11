@@ -2,6 +2,26 @@
 
 Automated LLM testing framework for **SecureBank's virtual loan assistant**, built on [Promptfoo](https://www.promptfoo.dev/). It runs quality/regression evals and red team (adversarial safety) scans automatically in CI/CD (Jenkins and GitLab CI), so every prompt/system-prompt change is checked for correctness, safety, and policy compliance before it ships.
 
+## What This Project Demonstrates
+
+This project demonstrates an end-to-end approach to testing and securing
+LLM-based applications:
+
+- LLM functional and regression testing
+- Prompt validation
+- Deterministic and LLM-based assertions
+- Adversarial red teaming
+- Prompt injection and jailbreak testing
+- PII and sensitive-data protection
+- Hallucination detection
+- Excessive-agency testing
+- API-based LLM evaluation
+- CI/CD quality gates
+- Jenkins pipeline automation
+- GitLab CI automation
+- Automated JSON test reporting
+- Multi-model evaluation
+  
 ---
 
 ## What is Promptfoo
@@ -375,4 +395,23 @@ This project standardizes on **JSON**, written to `results/eval-results.json` an
 - **Per-test `success`/`score`** — whether that specific test case passed, and its numeric score (relevant when assertions are weighted).
 - **`gradingResult.componentResults`** — a breakdown per assertion (e.g., the `llm-rubric` result and the `not-contains` result are reported separately), including the judge model's reasoning text for `llm-rubric`.
 
+
+---
+
+#  One technical point I would definitely verify
+
+You have:
+
+> `promptfoo eval --fail-threshold 0.8`  
+> "Exits non-zero if the overall pass rate is below 80%." 
+
+Make sure this exactly matches the Promptfoo version you're targeting and the semantics of `--fail-threshold`.
+
+Similarly, verify the exact availability/behavior of every CLI command in your current Promptfoo version, particularly:
+
+```text
+promptfoo share
+promptfoo cache clear
+promptfoo view --file
+promptfoo redteam generate
 ---
