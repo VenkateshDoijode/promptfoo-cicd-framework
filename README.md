@@ -121,6 +121,10 @@ Promptfoo reads provider credentials from **environment variables**. This projec
 | `OPENAI_API_KEY` | `promptfooconfig.yaml`, `promptfooconfig.fast.yaml`, `redteam.yaml` | Auth for all `openai:*` providers, and for the `gpt-4o-mini` **judge** model used by `llm-rubric` assertions |
 | `LOAN_API_KEY` | `promptfooconfig.fast.yaml` (the `https` provider — "SecureBank Loan API") | Bearer token injected into the live HTTP provider via `Authorization: Bearer {{env.LOAN_API_KEY}}` |
 
+«Note: "LOAN_API_KEY" is not mandatory for the entire framework.
+
+Promptfoo supports multiple providers. "LOAN_API_KEY" is required only when running the specific test cases where I compare the LLM response against the API response.»
+
 ### Local setup
 
 ```bash
