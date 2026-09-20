@@ -412,6 +412,19 @@ The security report provides a visual summary of the red-team evaluation, includ
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome! If you have ideas, improvements, bug fixes, or new features, feel free to contribute.
+
+---
+
 ## License
 
-MIT — see the `LICENSE` file for details.
+This project is licensed under the "MIT License" (https://github.com/VenkateshDoijode/promptfoo-cicd-framework/blob/main/LICENSE)
+
+---
+
+## 👨‍💻 Author
+
+Created and maintained by "Venkateshwara Doijode" (https://github.com/VenkateshDoijode).
+
