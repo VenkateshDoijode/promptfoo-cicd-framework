@@ -408,23 +408,16 @@ The security report provides a visual summary of the red-team evaluation, includ
 
 [![Promptfoo Red Team Security Report](https://github.com/VenkateshDoijode/promptfoo-cicd-framework/raw/main/results/secuity_vulnerablitity_report.jpg)](/VenkateshDoijode/promptfoo-cicd-framework/blob/main/results/secuity_vulnerablitity_report.jpg)
 
-> Note: the image file above is named `secuity_vulnerablitity_report.jpg` in the repo (typo in the filename). Consider renaming it to `security_vulnerability_report.jpg` and updating this link to match.
-
 ---
 
 ## 🤝 Contributing
 
 Contributions are welcome! If you have ideas, improvements, bug fixes, or new features, feel free to contribute.
 
----
+## 📄 License
 
-## License
-
-This project is licensed under the "MIT License" (https://github.com/VenkateshDoijode/promptfoo-cicd-framework/blob/main/LICENSE)
-
----
+This project is licensed under the [MIT License](LICENSE).
 
 ## 👨‍💻 Author
 
-Created and maintained by "Venkateshwara Doijode" (https://github.com/VenkateshDoijode).
-
+Created and maintained by [Venkateshwara Doijode](https://github.com/VenkateshDoijode).
