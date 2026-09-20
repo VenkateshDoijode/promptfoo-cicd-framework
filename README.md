@@ -1,5 +1,5 @@
 
-# Promptfoo CI/CD Framework
+# Promptfoo CI/CD Framework (AI LLM Evaluation Framework)
 
 [![CI](https://img.shields.io/badge/CI-GitLab%20CI-orange)](https://img.shields.io/badge/CI-GitLab%20CI-orange)
 [![Jenkins](https://img.shields.io/badge/CI-Jenkins-red)](https://img.shields.io/badge/CI-Jenkins-red)
