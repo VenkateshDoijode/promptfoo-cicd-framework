@@ -1,0 +1,68 @@
+# SQL Response Evaluation Configuration - SecureBank Internal Data Team
+# Author: Venkateshwara Doijode
+#
+# WHAT IS THIS?
+# Evaluates that the model generates valid, safe PostgreSQL queries.
+# Checks:
+#   * Output is valid parseable SQL      (is-sql)
+#   * Correct keywords and table refs    (javascript)
+#   * No destructive statements          (javascript + python)
+#   * Pure SQL output                    (javascript + python)
+#   * Latency and cost within limits     (latency, cost)
+#
+# HOW TO RUN:
+# Windows (PowerShell - direct):
+#   promptfoo eval --config configs/sql_response.yaml `
+#     --tests testcases/sql_response.yaml `
+#     --env-file environments/dev.env `
+#     --output reports/json/sql-response-dev.json --no-cache
+#
+# Windows (PowerShell - via script):
+#   .\scripts\run_eval.ps1 -Env dev -Config configs/sql_response.yaml `
+#     -TestFile testcases/sql_response.yaml
+#
+# Linux/Mac:
+#   ./scripts/run_eval.sh dev configs/sql_response.yaml testcases/sql_response.yaml
+#
+# View results:
+#   promptfoo view
+# ======================================================================
+
+description: "SQL Response Eval - SecureBank Internal Data Team"
+
+metadata:
+  environment: "{{env.ENVIRONMENT}}"
+
+prompts:
+  - file://prompts/sql-prompt.txt
+
+providers:
+  - id: "{{env.EVAL_MODEL_PRIMARY}}"
+    label: "GPT-4o (SQL)"
+    config: &sql_defaults
+      temperature: 0
+      max_tokens: {{env.SQL_MAX_TOKENS}}  # SQL queries should be concise
+      seed: {{env.SQL_SEED}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+  - id: "{{env.EVAL_MODEL_SECONDARY}}"
+    label: "GPT-4o Mini (SQL)"
+    config:
+      <<: *sql_defaults
+
+defaultTest:
+  options:
+    provider: "{{env.JUDGE_MODEL}}"  # judge model for llm-rubric assertions
+
+assert:
+  - type: is-sql               # every response must be valid SQL
+  - type: latency
+    threshold: {{env.SQL_LATENCY_THRESHOLD_MS}}  # SQL generation must complete within time limit
+  - type: cost
+    threshold: {{env.SQL_COST_THRESHOLD_USD}}  # max cost per call in USD
+
+evaluateOptions:
+  maxConcurrency: {{env.EVAL_CONCURRENCY}}
+  repeat: {{env.DEFAULT_REPEAT}}  # run each test case N times for consistency measurement
+
+sharing: false

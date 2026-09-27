@@ -1,0 +1,103 @@
+# JSON Response Evaluation Configuration — Loan Eligibility Assistant
+# Author: Venkateshwara Doijode
+#
+# WHAT IS THIS?
+#   Evaluates that the model returns valid, structured JSON responses when
+#   asked about loan eligibility. Checks:
+#     • Output is valid parseable JSON              (is-json)
+#     • JSON schema — all required fields            (is-json with schema)
+#     • Field values are correct                     (javascript on parsed JSON)
+#     • Compliance rules inside JSON fields           (not-contains, llm-rubric)
+#     • No markdown wrapping or extra text            (javascript)
+#
+# HOW TO RUN:
+#   Windows (PowerShell — direct):
+#     promptfoo eval --config configs\json_response.yaml `
+#       --tests testcases\loan_eligibility_json.yaml `
+#       --env-file environments\dev.env `
+#       --output reports\json\json-response-dev.json --no-cache
+#
+#   Windows (PowerShell — via script):
+#     .\scripts\run_eval.ps1 -Env dev -Config configs\json_response.yaml `
+#       -TestFile testcases\loan_eligibility_json.yaml
+#
+#   Linux/Mac:
+#     ./scripts/run_eval.sh dev configs/json_response.yaml testcases/loan_eligibility_json.yaml
+#
+#   View results:
+#     promptfoo view
+# ===============================================================================
+
+description: "JSON Response Eval — Loan Eligibility Assistant"
+
+metadata:
+  environment: {{env.ENVIRONMENT}}
+
+prompts:
+  - file://prompts/loan-eligibility-json.txt
+
+providers:
+
+# ==================================================================
+# Cloud — OpenAI GPT-4o
+# response_format enforces JSON at API level
+# ==================================================================
+- id: "{{env.EVAL_MODEL_PRIMARY}}"
+  label: "GPT-4o (JSON)"
+  config: &json_cloud_defaults
+    temperature: 0
+    max_tokens: {{env.EVAL_MAX_TOKENS}}
+    seed: {{env.EVAL_SEED}}
+    timeout: {{env.EVAL_TIMEOUT}}
+    response_format:
+      type: json_object    # enforces JSON output at API level
+
+# ==================================================================
+# Local API — OpenAI-compatible server (vLLM / LM Studio / FastAPI)
+# Start your local server first, then set LOCAL_API_URL in dev.env
+# e.g. LOCAL_API_URL=http://localhost:8000/v1
+# ==================================================================
+- id: "{{env.LOCAL_OPENAI_MODEL_ID}}"
+  label: "Local API (JSON)"
+  config:
+    apiBaseUrl: "{{env.LOCAL_API_URL}}"      # set in environments/dev.env
+    apiKey: "{{env.LOCAL_API_KEY}}"           # set LOCAL_API_KEY=local in dev.env
+    temperature: 0
+    max_tokens: {{env.EVAL_MAX_TOKENS}}
+    timeout: {{env.LOCAL_EVAL_TIMEOUT}}      # local models may be slower
+    response_format:
+      type: json_object
+
+# ==================================================================
+# Custom HTTP — any REST endpoint (non-OpenAI format)
+# Uncomment and configure if your API uses a custom request/response shape
+# ==================================================================
+# - id: "{{env.CUSTOM_API_URL}}"
+#   label: "Custom HTTP API (JSON)"
+#   config:
+#     method: POST
+#     headers:
+#       Authorization: "Bearer {{env.CUSTOM_API_KEY}}"
+#       Content-Type: "application/json"
+#     body:
+#       input: "{{prompt}}"
+#     responseParser: "json.output"     # path to response text in JSON
+
+defaultTest:
+  options:
+    provider: "{{env.JUDGE_MODEL}}"     # judge model for llm-rubric assertions
+
+assert:
+  - type: is-json                        # every response must be valid JSON
+  - type: latency
+    threshold: {{env.LATENCY_THRESHOLD_MS}}   # response must arrive within time limit
+  - type: cost
+    threshold: {{env.COST_THRESHOLD_USD}}     # max cost per call in USD
+  # - type: perplexity
+  #   threshold: 50                          # lower = more confident output (provider must support logprobs)
+
+evaluateOptions:
+  maxConcurrency: {{env.EVAL_CONCURRENCY}}
+  repeat: {{env.DEFAULT_REPEAT}}   # run each test case N times for consistency measurement
+
+sharing: false

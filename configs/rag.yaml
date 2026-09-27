@@ -1,0 +1,88 @@
+# RAG Evaluation Configuration — SecureBank Loan Assistant
+# Author: Venkateshwara Doijode
+#
+# WHAT IS THIS?
+# Evaluates RAG (Retrieval-Augmented Generation) quality for the SecureBank
+# loan assistant. The model must answer using ONLY the retrieved context passed
+# via {{context}} — not its training data.
+#
+# Flow:
+# User question → Retrieved context → LLM (context + question) → Grounded answer
+#
+# Checks:
+# • context-relevance — was the right document retrieved?
+# • context-faithfulness — does the answer stay within the context?
+# • context-recall — does the context cover enough to answer?
+# • answer-relevance — does the answer address the question?
+# • factuality — is the answer factually consistent with the reference?
+#
+# HOW TO RUN:
+# Windows (PowerShell — direct):
+# promptfoo eval --config configs\rag.yaml `
+# --tests testcases\rag_test_cases.yaml `
+# --env-file environments\dev.env `
+# --output reports\json\rag-eval-dev.json --no-cache
+#
+# Windows (PowerShell — via script):
+# .\scripts\run_eval.ps1 -Env dev -Config configs\rag.yaml -TestFile testcases\rag_test_cases.yaml
+#
+# View results:
+# promptfoo view
+#
+# NOTE:
+# Promptfoo does not connect to a vector DB directly.
+# The retrieved context is supplied manually in each test case via the
+# {{context}} variable — simulating what your retrieval layer would return.
+# ==============================================================================
+
+description: "RAG Eval — SecureBank Loan Assistant"
+
+metadata:
+  environment: {{env.ENVIRONMENT}}
+
+prompts:
+  - |
+    Use only the following context to answer the customer's question.
+    Do not use any information outside the context provided.
+    If the context does not contain enough information, say so clearly.
+
+    Context:
+    {{context}}
+
+    Question: {{question}}
+
+providers:
+  - id: "{{env.EVAL_MODEL_PRIMARY}}"
+    label: "GPT-4o (RAG)"
+    config: &rag_defaults
+      temperature: 0
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      seed: {{env.EVAL_SEED}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+  - id: "{{env.CLAUDE_MODEL_PRIMARY}}"
+    label: "Claude 3.5 Sonnet (RAG)"
+    config:
+      temperature: 0
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+# ==============================================================================
+# DEFAULT TEST SETTINGS
+# Applied to every RAG test case automatically.
+# ==============================================================================
+defaultTest:
+  options:
+    provider: "{{env.JUDGE_MODEL}}" # judge model for llm-rubric and RAG assertions
+
+  assert:
+    - type: latency
+      threshold: {{env.LATENCY_THRESHOLD_MS}} # responses must arrive within time limit
+    - type: answer-relevance # answer must address the question asked
+    - type: context-faithfulness # answer must not add facts outside the context
+
+evaluateOptions:
+  maxConcurrency: {{env.EVAL_CONCURRENCY}} # conservative — RAG calls involve more tokens
+  repeat: {{env.DEFAULT_REPEAT}} # run each test case N times for consistency measurement
+
+sharing: false

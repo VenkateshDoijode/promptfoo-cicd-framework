@@ -1,53 +1,64 @@
 # Promptfoo Quality Eval Configuration
+# Full quality eval – all providers, all test cases. Use on main branch.
 # Docs: https://www.promptfoo.dev/docs/configuration/guide
+# Author: Venkateshwara Doijode
+#
+# HOW TO RUN:
+#   Linux/Mac:
+#     promptfoo eval --config promptfooconfig.yaml \
+#       --env-file environments/dev.env \
+#       --output reports/json/eval-results-dev.json --no-cache
+#
+#   Windows (PowerShell):
+#     promptfoo eval --config promptfooconfig.yaml `
+#       --env-file environments\dev.env `
+#       --output reports\json\eval-results-dev.json --no-cache
+#
+#   View results:
+#     promptfoo view
 
 description: "LLM Quality & Regression Eval"
+
+metadata:
+  environment: {{env.ENVIRONMENT}}
 
 prompts:
   - "{{question}}"
 
 providers:
-  - id: openai:gpt-4o
+  - id: "{{env.EVAL_MODEL_PRIMARY}}"
     label: "GPT-4o (Best)"
-    config:
-      systemPrompt: file://prompt/system-prompt.txt
+    config: &openai_defaults
+      systemPrompt: file://prompts/system-prompt.txt
       temperature: 0
-      max_tokens: 500
-      seed: 42
-      timeout: 30000
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      seed: {{env.EVAL_SEED}}
+      timeout: {{env.EVAL_TIMEOUT}}
 
-  - id: openai:gpt-4o-mini
+  - id: "{{env.EVAL_MODEL_SECONDARY}}"
     label: "GPT-4o Mini (Cheap)"
     config:
-      systemPrompt: file://prompt/system-prompt.txt
-      temperature: 0
-      max_tokens: 500
-      seed: 42
-      timeout: 30000
+      <<: *openai_defaults
 
-  - id: openai:gpt-4-turbo
+  - id: "{{env.OPENAI_MODEL_TURBO}}"
     label: "GPT-4 Turbo"
     config:
-      systemPrompt: file://prompt/system-prompt.txt
-      temperature: 0
-      max_tokens: 500
-      seed: 42
-      timeout: 30000
+      <<: *openai_defaults
 
-  - id: openai:gpt-3.5-turbo
+  - id: "{{env.OPENAI_MODEL_LEGACY}}"
     label: "GPT-3.5 (Baseline)"
     config:
-      systemPrompt: file://prompt/system-prompt.txt
-      temperature: 0
-      max_tokens: 500
-      seed: 42
-      timeout: 30000
+      <<: *openai_defaults
 
 defaultTest:
   options:
-    provider: openai:gpt-4o-mini  # cheaper model used as llm-rubric judge
+    provider: "{{env.JUDGE_MODEL}}"   # cheaper model used as llm-rubric judge
 
 tests:
-  - file://tests/test-cases.yaml
+  - file://testcases/loan_assistant.yaml
+
+evaluateOptions:
+  maxConcurrency: {{env.EVAL_CONCURRENCY}}
+  repeat: {{env.DEFAULT_REPEAT}}   # run each test case N times for consistency measurement
 
 sharing: false

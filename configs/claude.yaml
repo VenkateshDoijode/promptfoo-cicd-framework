@@ -1,0 +1,47 @@
+# Anthropic Claude Provider Configuration
+# Set ANTHROPIC_API_KEY in your environment or environments/dev.env before running
+# Author: Venkateshwara Doijode
+#
+# HOW TO RUN:
+#   Linux/Mac:
+#     promptfoo eval --config configs/claude.yaml \
+#       --tests testcases/loan_assistant.yaml \
+#       --env-file environments/dev.env \
+#       --output reports/json/eval-claude-dev.json --no-cache
+#
+#   Windows (PowerShell):
+#     promptfoo eval --config configs\claude.yaml `
+#       --tests testcases\loan_assistant.yaml `
+#       --env-file environments\dev.env `
+#       --output reports\json\eval-claude-dev.json --no-cache
+#
+#   View results:
+#     promptfoo view
+
+description: "Anthropic Claude Models — Quality Eval"
+
+metadata:
+  environment: {{env.ENVIRONMENT}}
+
+prompts:
+  - "{{question}}"
+
+providers:
+  - id: "{{env.CLAUDE_MODEL_PRIMARY}}"
+    label: "Claude 3.5 Sonnet (Best)"
+    config: &claude_defaults
+      systemPrompt: file://prompts/system-prompt.txt
+      temperature: 0
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+  - id: "{{env.CLAUDE_MODEL_FAST}}"
+    label: "Claude 3 Haiku (Fast)"
+    config:
+      <<: *claude_defaults
+
+defaultTest:
+  options:
+    provider: "{{env.CLAUDE_MODEL_FAST}}"   # cheaper model as judge
+
+sharing: false

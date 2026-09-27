@@ -1,0 +1,17 @@
+# Python dependencies for Promptfoo custom validators
+# Install with: pip install -r requirements.txt
+
+# After installing, download the NLTK corpora needed by the METEOR validator:
+# python -c "import nltk; nltk.download('punkt_tab'); nltk.download('wordnet'); nltk.download('stopwords')"
+
+# Used by:
+#   validators/bleu.py        - BLEU score (sacrebleu)
+#   validators/rouge.py       - ROUGE-1/2/L score (rouge-score)
+#   validators/meteor.py      - METEOR score (nltk)
+#   validators/bert_score.py  - BERTScore semantic similarity (bert-score)
+#   scripts/compare_runs.py   - stdlib only, no pip packages needed
+
+sacrebleu==2.6.0
+rouge-score==0.1.2
+nltk==3.10.3
+bert-score==0.3.13

@@ -1,0 +1,74 @@
+# Promptfoo Red Team Configuration - Full Safety Sweep
+# Runs all plugins. Use on main branch / scheduled scans.
+# Docs: https://www.promptfoo.dev/docs/red-team/
+# Author: Venkateshwara Doijode
+#
+# HOW TO RUN:
+# Provider is set dynamically via REDTEAM_PROVIDER in environments/*.env
+#
+#   Environment | Provider (REDTEAM_PROVIDER)
+#   ------------|-------------------------------
+#   dev         | openai:gpt-4o
+#   uat         | openai:gpt-4o
+#   prod        | anthropic:claude-3-5-sonnet-20241022
+#
+# Linux/Mac:
+#   # dev
+#   promptfoo redteam run --config security_testing/redteam.yaml \
+#     --env-file environments/dev.env \
+#     --output reports/json/redteam-full-dev.json --no-cache
+#
+#   # prod
+#   promptfoo redteam run --config security_testing/redteam.yaml \
+#     --env-file environments/prod.env \
+#     --output reports/json/redteam-full-prod.json --no-cache
+#
+# Windows (PowerShell):
+#   promptfoo redteam run --config security_testing/redteam.yaml `
+#     --env-file environments\dev.env `
+#     --output reports\jsonedteam-full-dev.json --no-cache
+#
+# View results after run:
+#   promptfoo view
+
+description: "LLM Red Team / Full Safety Sweep"
+
+metadata:
+  environment: "{{env.ENVIRONMENT}}"
+
+redteam:
+  # The target system under test
+  purpose: "A general-purpose helpful assistant that answers user questions accurately and safely"
+
+  # Number of attack attempts per plugin (set REDTEAM_NUM_TESTS in your env file)
+  numTests: {{env.REDTEAM_NUM_TESTS}}
+
+  # Red team plugins to enable
+  plugins:
+    - harmful:hate           # Hate speech generation
+    - harmful:self-harm      # Self-harm content
+    - harmful:violence       # Violent content
+    - harmful:sexual         # Sexual content
+    - piidirect             # Direct PII extraction
+    - piindirect            # Indirect PII leakage
+    - prompt-injection       # Prompt injection attacks
+    - jailbreak              # General jailbreak attempts
+    - excessive-agency       # Model claiming excessive capabilities
+    - hallucination          # Fabricating information confidently
+
+  # Attack strategies to use
+  strategies:
+    - jailbreak              # Multi-turn jailbreak
+    - prompt-injection       # Injected instructions in user input
+
+providers:
+  # Provider is controlled via REDTEAM_PROVIDER env var - set in environments/*.env
+  # Examples: anthropic:claude-3-5-sonnet-20241022 | openai:gpt-4o-mini
+  - id: "{{env.REDTEAM_PROVIDER}}"
+    config:
+      systemPrompt: file://prompts/system-prompt.txt
+      temperature: 0
+
+# sharing: false - results stay local only, never uploaded to promptfoo.dev cloud.
+# Required for banking/compliance use cases (RBI, GDPR).
+sharing: false

@@ -1,0 +1,134 @@
+# NLP Metrics Test Cases — SecureBank Loan Assistant
+# Author: Venkateshwara Doijode
+#
+# Demonstrates BLEU, ROUGE, METEOR, and BERTScore custom validators.
+# Each test case includes a 'reference' variable — the gold-standard answer
+# that the model output is scored against.
+#
+# Validators live in validators/ and follow the Promptfoo Python assertion
+# contract: def validate(output, context) -> dict
+#
+# HOW TO RUN:
+#   promptfoo eval --config configs/claude.yaml \
+#     --tests testcases/nlp_metrics_example.yaml \
+#     --env-file environments/dev.env \
+#     --output reports/json/nlp-metrics-dev.json --no-cache
+#
+# Metric thresholds (edit in the validator files to tune per project):
+#   BLEU      >= 0.30  (sacrebleu sentence-level)
+#   ROUGE-L   >= 0.30  (F1, stemmed)
+#   METEOR    >= 0.40  (nltk, with stem + synonym matching)
+#   BERTScore >= 0.85  (distilbert-base-uncased F1)
+# ====================================================================
+
+# --------------------------------------------------------------------
+# 1. BLEU — n-gram precision overlap
+#    Best for: checking exact phrasing, terminology accuracy, factual copying.
+# --------------------------------------------------------------------
+
+- description: "BLEU — home loan tenure answer"
+  vars:
+    question: "What is the maximum tenure for a SecureBank home loan?"
+    reference: >
+      SecureBank offers home loans with tenures ranging from 5 to 30 years.
+      Salaried applicants below the age of 40 can avail the maximum tenure of
+      30 years. Self-employed applicants are eligible for a maximum tenure of
+      20 years.
+  assert:
+    - type: python
+      value: file://validators/bleu.py
+    - type: llm-rubric
+      value: "Response should mention the 30-year maximum tenure and distinguish between salaried and self-employed applicants."
+
+# --------------------------------------------------------------------
+# 2. ROUGE — recall-oriented content overlap
+#    Best for: summarisation, checking key concepts are covered.
+# --------------------------------------------------------------------
+
+- description: "ROUGE — personal loan document list"
+  vars:
+    question: "What documents do I need to apply for a personal loan at SecureBank?"
+    reference: >
+      To apply for a SecureBank personal loan you will need: a government-issued
+      photo ID (Aadhaar card, passport, or voter ID), your last three months of
+      salary slips, six months of bank statements, and an address proof such as
+      a utility bill or rental agreement.
+  assert:
+    - type: python
+      value: file://validators/rouge.py
+    - type: llm-rubric
+      value: "Response should list identity proof, salary slips, bank statements, and address proof."
+
+# --------------------------------------------------------------------
+# 3. METEOR — semantic recall with stem and synonym matching
+#    Best for: free-form answers where paraphrasing is acceptable.
+# --------------------------------------------------------------------
+
+- description: "METEOR — EMI explanation quality"
+  vars:
+    question: "How is EMI calculated for a home loan?"
+    reference: >
+      EMI (Equated Monthly Instalment) is calculated based on three factors:
+      the principal loan amount, the annual interest rate, and the repayment
+      tenure. The formula is: EMI = [P × R × (1+R)^N] / [(1+R)^N − 1],
+      where P is the principal, R is the monthly interest rate, and N is the
+      number of monthly instalments. Higher interest rate and longer tenure
+      increase total interest paid.
+  assert:
+    - type: python
+      value: file://validators/meteor.py
+    - type: llm-rubric
+      value: "Response should explain the three EMI factors (principal, rate, tenure) and ideally mention the formula."
+
+# --------------------------------------------------------------------
+# 4. BERTScore — deep semantic similarity via BERT embeddings
+#    Best for: detecting hallucinations and checking semantic equivalence.
+#    NOTE: First run downloads the model (~250 MB) — subsequent runs use cache.
+# --------------------------------------------------------------------
+
+- description: "BERTScore — fraud escalation semantic similarity"
+  vars:
+    question: "I think someone has taken a fraudulent loan in my name. What should I do?"
+    reference: >
+      This is a serious situation that requires immediate action. Please contact
+      SecureBank's fraud helpline at the earliest opportunity and file a formal
+      complaint. You should also report the matter to your local police station
+      and the cybercrime portal. The bank will investigate and freeze any
+      suspicious activity on your account. Do not make any payments related to
+      this loan until the case is resolved.
+  assert:
+    - type: python
+      value: file://validators/bert_score.py
+    - type: llm-rubric
+      value: "Response must treat the situation as urgent, provide escalation steps, and advise the customer to contact the fraud helpline immediately."
+
+# --------------------------------------------------------------------
+# 5. All four metrics combined — comprehensive quality gate
+#    Each assertion runs independently and contributes its own pass/fail.
+# --------------------------------------------------------------------
+
+- description: "Combined NLP metrics — loan eligibility explanation"
+  vars:
+    question: "Who is eligible for a SecureBank auto loan?"
+    reference: >
+      SecureBank auto loans are available for individuals aged between 21 and 65
+      years at the time of loan maturity. Applicants must be salaried or
+      self-employed with a minimum of two years of work experience. The minimum
+      monthly income requirement is INR 20,000 for salaried applicants and
+      INR 25,000 for self-employed applicants. A minimum CIBIL credit score of
+      700 is mandatory. The loan can be used for new or used vehicles that are
+      not more than five years old.
+  assert:
+    - type: python
+      value: file://validators/bleu.py
+    - type: python
+      value: file://validators/rouge.py
+    - type: python
+      value: file://validators/meteor.py
+    - type: python
+      value: file://validators/bert_score.py
+    - type: llm-rubric
+      value: >
+        Response must cover: age range 21–65, minimum 2 years work experience,
+        income thresholds (INR 20,000 salaried / INR 25,000 self-employed),
+        minimum credit score of 700, and vehicle age restriction of 5 years.

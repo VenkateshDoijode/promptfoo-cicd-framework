@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LoanEligibilityResponse",
+  "description": "Schema for SecureBank loan eligibility JSON response",
+  "type": "object",
+  "required": [
+    "eligible",
+    "status",
+    "reason",
+    "next_steps",
+    "disclaimer"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "eligible": {
+      "type": "boolean",
+      "description": "Whether the applicant is eligible for a loan"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "rejected",
+        "pending_review"
+      ],
+      "description": "Eligibility decision status"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 10,
+      "description": "One sentence explanation of the decision"
+    },
+    "next_steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 5
+      },
+      "description": "Actionable steps the customer should take"
+    },
+    "disclaimer": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Standard disclaimer about credit assessment"
+    }
+  }
+}

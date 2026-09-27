@@ -1,85 +1,164 @@
-stages:
-  - eval
-  - redteam
+# .gitlab-ci.yml — Promptfoo LLM Evaluation Pipeline (UAT)
+# Author: Venkateshwara Doijode
+#
+# PIPELINE STAGES:
+#   1. pr-check    — regression + functional assertions (blocks merge to uat branch)
+#   2. uat-eval     — full test suite on merge to uat branch
+#
+# VARIABLES (set in GitLab → Settings → CI/CD → Variables):
+#   ANTHROPIC_API_KEY          — Anthropic API key (masked)
+#   OPENAI_API_KEY             — OpenAI API key (masked)
+#   AZURE_OPENAI_API_KEY       — Azure OpenAI API key (masked)
+#   AZURE_OPENAI_API_HOST      — Azure OpenAI host URL (masked)
+#   AZURE_OPENAI_DEPLOYMENT_ID — Azure deployment name
+#   LOAN_API_KEY               — SecureBank internal API key (masked)
+# ====================================================================
 
 variables:
-  NODE_VERSION: "20"
-  PROMPTFOO_VERSION: "latest"
-  # OPENAI_API_KEY must be set in GitLab CI/CD → Settings → CI/CD → Variables
-  # Mark it as "Masked" and "Protected" in GitLab settings
+  PROMPTFOO_VERSION: "0.97.0"        # update here when upgrading promptfoo
+  NODE_IMAGE: node:20-slim           # update here when upgrading Node.js base image
+  CI_ENV_NAME: "uat"                 # logical environment name written into ci.env
+  ARTIFACT_EXPIRE_PR: "7 days"       # artifact retention for PR check jobs
+  ARTIFACT_EXPIRE_UAT: "14 days"     # artifact retention for UAT eval jobs
 
-# —— Quality / Regression Eval ———————————————
-llm-eval:
-  stage: eval
-  image: node:${NODE_VERSION}-slim
+  # Per-job quality gate thresholds — override in GitLab CI/CD project variables if needed
+  REGRESSION_FAIL_THRESHOLD: "0.9"
+  REGRESSION_REPEAT: "1"
+  FUNCTIONAL_FAIL_THRESHOLD: "0.85"
+  FUNCTIONAL_REPEAT: "1"
+  SMOKE_FAIL_THRESHOLD: "0.95"
+  SMOKE_REPEAT: "2"
+  BUSINESS_RULES_FAIL_THRESHOLD: "0.95"
+  BUSINESS_RULES_REPEAT: "2"
+  REGRESSION_FULL_FAIL_THRESHOLD: "0.9"
+  REGRESSION_FULL_REPEAT: "2"
+
+default:
+  image: ${NODE_IMAGE}
   before_script:
     - npm install -g promptfoo@${PROMPTFOO_VERSION}
+    - pip3 install -r requirements.txt --quiet --break-system-packages   # required for Python validators (bleu/rouge/meteor/bert_score); --break-system-packages
+    - chmod +x scripts/run_eval.sh
+    - |
+      # Base ci.env from uat.env (carries all model/inference/threshold vars)
+      # then override with real secrets so placeholders are never used.
+      cp environments/uat.env environments/ci.env
+      cat >> environments/ci.env <<EOF
+      ENVIRONMENT=${CI_ENV_NAME}
+      ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY=${OPENAI_API_KEY}
+      AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      AZURE_OPENAI_API_HOST=${AZURE_OPENAI_API_HOST}
+      AZURE_OPENAI_DEPLOYMENT_ID=${AZURE_OPENAI_DEPLOYMENT_ID}
+      LOAN_API_KEY=${LOAN_API_KEY}
+      OUTPUT_DIR=reports/json
+      EOF
+    - mkdir -p reports/json
+
+stages:
+  - pr-check
+  - uat-eval
+
+# ============================================================================
+# Stage 1 — PR Check
+# Runs on every merge request targeting the uat branch
+# Blocks merge if regression or functional assertions fail
+# ============================================================================
+
+regression-check:
+  stage: pr-check
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "uat"'
+  variables:
+    FAIL_THRESHOLD: $REGRESSION_FAIL_THRESHOLD
+    DEFAULT_REPEAT: $REGRESSION_REPEAT
   script:
-    - echo "Running quality eval..."
-    - promptfoo eval
-        --config promptfooconfig.yaml
-        --no-cache
-        --output results/eval-results.json
-        --fail-threshold 0.8
-  after_script:
-    - echo "Eval complete. Pass threshold was 80%."
+    - |
+      echo "FAIL_THRESHOLD=${FAIL_THRESHOLD}" >> environments/ci.env
+      echo "DEFAULT_REPEAT=${DEFAULT_REPEAT}" >> environments/ci.env
+      ./scripts/run_eval.sh ci configs/claude.yaml assertions/regression.yaml
   artifacts:
-    name: "eval-results-${CI_COMMIT_SHORT_SHA}"
-    paths:
-      - results/eval-results.json
     when: always
-    expire_in: 30 days
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-  allow_failure: false
+    paths:
+      - reports/json/
+    expire_in: ${ARTIFACT_EXPIRE_PR}
 
-# —— Red Team / Safety Testing ———————————————
-llm-redteam:
-  stage: redteam
-  image: node:${NODE_VERSION}-slim
-  before_script:
-    - npm install -g promptfoo@${PROMPTFOO_VERSION}
+functional-check:
+  stage: pr-check
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "uat"'
+  variables:
+    FAIL_THRESHOLD: $FUNCTIONAL_FAIL_THRESHOLD
+    DEFAULT_REPEAT: $FUNCTIONAL_REPEAT
   script:
-    - echo "Running red team safety scan..."
-    - promptfoo redteam run
-        --config redteam.yaml
-        --no-cache
-        --output results/redteam-results.json
-  after_script:
-    - echo "Red team scan complete. Review results artifact."
+    - |
+      echo "FAIL_THRESHOLD=${FAIL_THRESHOLD}" >> environments/ci.env
+      echo "DEFAULT_REPEAT=${DEFAULT_REPEAT}" >> environments/ci.env
+      ./scripts/run_eval.sh ci configs/claude.yaml assertions/functional.yaml
   artifacts:
-    name: "redteam-results-${CI_COMMIT_SHORT_SHA}"
-    paths:
-      - results/redteam-results.json
     when: always
-    expire_in: 30 days
-  rules:
-    # Only run redteam on main branch (expensive) or manual trigger
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-    - when: manual
-  allow_failure: true  # Red team findings are reviewed manually, not hard-blocking
+    paths:
+      - reports/json/
+    expire_in: ${ARTIFACT_EXPIRE_PR}
 
-# —— View Results (optional manual job) ———————————————
-view-results:
-  stage: redteam
-  image: node:${NODE_VERSION}-slim
-  before_script:
-    - npm install -g promptfoo@${PROMPTFOO_VERSION}
-  script:
-    - echo "To view results locally, run: promptfoo view results/eval-results.json"
-    - promptfoo view --file results/eval-results.json --yes 2>/dev/null || true
-    - cat results/eval-results.json | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-results = data.get('results', {})
-stats = results.get('stats', {})
-print(f\"Pass: {stats.get('successes', 'N/A')}\")
-print(f\"Fail: {stats.get('failures', 'N/A')}\")
-print(f\"Total: {stats.get('successes', 0) + stats.get('failures', 0)}\")
-"
-  dependencies:
-    - llm-eval
+# ============================================================================
+# Stage 2 — UAT Eval
+# Runs on push/merge to uat branch (not merge requests)
+# Full test suite — smoke, business rules, regression, RAG
+# ============================================================================
+
+smoke-test:
+  stage: uat-eval
   rules:
-    - when: manual
-  allow_failure: true
+    - if: '$CI_COMMIT_BRANCH == "uat" && $CI_PIPELINE_SOURCE != "merge_request_event"'
+  variables:
+    FAIL_THRESHOLD: $SMOKE_FAIL_THRESHOLD
+    DEFAULT_REPEAT: $SMOKE_REPEAT
+  script:
+    - |
+      echo "FAIL_THRESHOLD=${FAIL_THRESHOLD}" >> environments/ci.env
+      echo "DEFAULT_REPEAT=${DEFAULT_REPEAT}" >> environments/ci.env
+      ./scripts/run_eval.sh ci configs/claude.yaml testcases/smoke_test_case.yaml
+  artifacts:
+    when: always
+    paths:
+      - reports/json/
+    expire_in: ${ARTIFACT_EXPIRE_UAT}
+
+business-rules:
+  stage: uat-eval
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "uat" && $CI_PIPELINE_SOURCE != "merge_request_event"'
+  variables:
+    FAIL_THRESHOLD: $BUSINESS_RULES_FAIL_THRESHOLD
+    DEFAULT_REPEAT: $BUSINESS_RULES_REPEAT
+  script:
+    - |
+      echo "FAIL_THRESHOLD=${FAIL_THRESHOLD}" >> environments/ci.env
+      echo "DEFAULT_REPEAT=${DEFAULT_REPEAT}" >> environments/ci.env
+      ./scripts/run_eval.sh ci configs/claude.yaml compliance/business_rules.yaml
+  environment:
+    name: uat
+  artifacts:
+    when: always
+    paths:
+      - reports/json/
+    expire_in: ${ARTIFACT_EXPIRE_UAT}
+
+regression-full:
+  stage: uat-eval
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "uat" && $CI_PIPELINE_SOURCE != "merge_request_event"'
+  variables:
+    FAIL_THRESHOLD: $REGRESSION_FULL_FAIL_THRESHOLD
+    DEFAULT_REPEAT: $REGRESSION_FULL_REPEAT
+  script:
+    - |
+      echo "FAIL_THRESHOLD=${FAIL_THRESHOLD}" >> environments/ci.env
+      echo "DEFAULT_REPEAT=${DEFAULT_REPEAT}" >> environments/ci.env
+      ./scripts/run_eval.sh ci configs/claude.yaml assertions/regression.yaml
+  artifacts:
+    when: always
+    paths:
+      - reports/json/
+    expire_in: ${ARTIFACT_EXPIRE_UAT}

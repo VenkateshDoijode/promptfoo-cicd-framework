@@ -1,0 +1,120 @@
+# ===============================================================================
+# configs/ab-test-customer-support.yaml
+# A/B Test — Customer Support Prompt Variants × Models
+# Author: Venkateshwara Doijode
+#
+# ===============================================================================
+# WHAT IS THIS?
+#   A demo A/B test that compares two system prompt variants across two models.
+#   Every test case is run against all 4 combinations (2 prompts × 2 models),
+#   producing a side-by-side comparison grid in the report.
+#
+#   Prompt A — prompts/customer_support_v1.txt   (friendly, detailed — current)
+#   Prompt B — prompts/customer_support_v2.txt   (concise, direct — new variant)
+#
+#   Models tested:
+#     • openai:gpt-4o          (best quality)
+#     • openai:gpt-4o-mini     (fast / cheap)
+#
+#   Result: 4-column comparison grid in promptfoo view
+#
+#     GPT-4o | Prompt A        GPT-4o | Prompt B
+#     GPT-4o Mini | Prompt A   GPT-4o Mini | Prompt B
+#
+#
+#   Total API calls: 2 prompts × 2 models × 2 test cases = 8
+#
+# HOW TO RUN:
+#   Linux/Mac:
+#     promptfoo eval --config configs/ab-test-customer-support.yaml \
+#       --env-file environments/dev.env \
+#       --output reports/json/ab-test-customer-support.json --no-cache
+#
+#   Windows (PowerShell):
+#     promptfoo eval --config configs\ab-test-customer-support.yaml `
+#       --env-file environments\dev.env `
+#       --output reports\json\ab-test-customer-support.json --no-cache
+#
+#   View results:
+#     promptfoo view
+# ===============================================================================
+
+description: "A/B Test — Customer Support: Prompt A (Friendly) vs Prompt B (Concise) × 2 Models"
+
+metadata:
+  environment: {{env.ENVIRONMENT}}
+
+prompts:
+  - "{{question}}"
+
+providers:
+
+# ===============================================================================
+# PROMPT A — customer_support_v1.txt
+# Style: Friendly, patient, detailed (current production prompt)
+# ===============================================================================
+
+  - id: "{{env.EVAL_MODEL_PRIMARY}}"
+    label: "GPT-4o | Prompt A (Friendly)"
+    config: &prompt_a_config
+      systemPrompt: file://prompts/customer_support_v1.txt
+      temperature: 0
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      seed: {{env.EVAL_SEED}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+  - id: "{{env.EVAL_MODEL_SECONDARY}}"
+    label: "GPT-4o Mini | Prompt A (Friendly)"
+    config:
+      <<: *prompt_a_config
+
+# ===============================================================================
+# PROMPT B — customer_support_v2.txt
+# Style: Concise, direct, efficient (new variant being tested)
+# ===============================================================================
+
+  - id: "{{env.EVAL_MODEL_PRIMARY}}"
+    label: "GPT-4o | Prompt B (Concise)"
+    config: &prompt_b_config
+      systemPrompt: file://prompts/customer_support_v2.txt
+      temperature: 0
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      seed: {{env.EVAL_SEED}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+  - id: "{{env.EVAL_MODEL_SECONDARY}}"
+    label: "GPT-4o Mini | Prompt B (Concise)"
+    config:
+      <<: *prompt_b_config
+
+# ===============================================================================
+# DEFAULT TEST SETTINGS
+# Applied to every test case automatically.
+# ===============================================================================
+
+defaultTest:
+  options:
+    provider: "{{env.JUDGE_MODEL}}"   # judge model used for llm-rubric assertions
+
+assert:
+  - type: latency
+    threshold: {{env.LATENCY_THRESHOLD_MS}}   # all responses must arrive within time limit
+  - type: cost
+    threshold: {{env.AB_COST_THRESHOLD_USD}}   # max cost per call in USD – flags expensive responses
+  - type: not-contains
+    value: "I cannot help"   # neither variant should refuse to help
+  - type: not-contains
+    value: "As an AI language model"   # no boilerplate AI disclaimers
+
+# ===============================================================================
+# TEST CASES
+# ===============================================================================
+
+tests:
+  - file://testcases/ab_test_customer_support.yaml
+
+evaluateOptions:
+  maxConcurrency: {{env.EVAL_CONCURRENCY}}
+  repeat: {{env.DEFAULT_REPEAT}}   # run each test case N times for consistency measurement
+
+sharing: false

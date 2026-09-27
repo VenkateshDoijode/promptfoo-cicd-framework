@@ -1,0 +1,90 @@
+# Local LLM Provider Configuration - Ollama
+# Author: Venkateshwara Doijode
+#
+# PREREQUISITES:
+# 1. Install Ollama: https://ollama.com/download
+# 2. Pull a model:
+#      ollama pull llama3
+#      ollama pull mistral
+#      ollama pull phi3
+# 3. Start Ollama (runs automatically on install, or manually):
+#      ollama serve
+# 4. Verify it is running:
+#      curl http://localhost:11434/api/tags
+#
+# NO API KEY NEEDED - runs entirely on your local machine.
+#
+# HOW TO RUN:
+# Linux/Mac:
+#   promptfoo eval --config configs/local_ollama.yaml \
+#     --tests testcases/loan_assistant.yaml \
+#     --output reports/json/eval-ollama-local.json --no-cache
+#
+# Windows (PowerShell):
+#   promptfoo eval --config configs/local_ollama.yaml `
+#     --tests testcases/loan_assistant.yaml `
+#     --output reports/json/eval-ollama-local.json --no-cache
+#
+# View results:
+#   promptfoo view
+#
+# NOTE:
+# - No --env-file needed (no API keys required)
+# - llm-rubric assertions use ollama:llama3 as judge - fully local, no API key needed
+# - To use a cloud judge instead, change defaultTest.options.provider to openai:gpt-4o-mini
+# ======================================================================
+
+description: "Local LLM Eval - Ollama"
+
+metadata:
+  environment: "{{env.ENVIRONMENT}}"
+
+prompts:
+  - "{{question}}"
+
+providers:
+  # ======================================================================
+  # Llama 3 - Meta's open-source model (recommended)
+  # Pull: ollama pull llama3
+  # ======================================================================
+  - id: "{{env.OLLAMA_MODEL_PRIMARY}}"
+    label: "Llama 3 (Local)"
+    config: &ollama_defaults
+      systemPrompt: file://prompts/system-prompt.txt
+      temperature: 0
+      num_predict: {{env.LOCAL_NUM_PREDICT}}  # Ollama equivalent of max_tokens
+      timeout: {{env.LOCAL_EVAL_TIMEOUT}}  # local models can be slower
+
+  # ======================================================================
+  # Mistral 7B - fast and lightweight
+  # Pull: ollama pull mistral
+  # ======================================================================
+  - id: "{{env.OLLAMA_MODEL_FAST}}"
+    label: "Mistral 7B (Local)"
+    config:
+      <<: *ollama_defaults
+
+  # ======================================================================
+  # Phi-3 Mini - Microsoft's small but capable model
+  # Pull: ollama pull phi3
+  # ======================================================================
+  - id: "{{env.OLLAMA_MODEL_SMALL}}"
+    label: "Phi-3 Mini (Local)"
+    config:
+      <<: *ollama_defaults
+
+# ======================================================================
+# DEFAULT TEST SETTINGS
+# llm-rubric uses LOCAL_JUDGE_MODEL as judge - fully local, no API key needed.
+# Set LOCAL_JUDGE_MODEL=ollama:llama3 in your env file, or override with a
+# cloud judge: LOCAL_JUDGE_MODEL=openai:gpt-4o-mini
+# ======================================================================
+defaultTest:
+  options:
+    provider: "{{env.LOCAL_JUDGE_MODEL}}"  # local judge - no API key needed
+
+evaluateOptions:
+  maxConcurrency: 1  # Ollama is single-threaded - keep concurrency at 1
+  repeat: {{env.DEFAULT_REPEAT}}  # run each test case N times for consistency measurement
+
+sharing: false

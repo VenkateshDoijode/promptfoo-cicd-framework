@@ -1,0 +1,54 @@
+# Functional Assertions – SecureBank AI Assistants
+# These assertions verify that each assistant performs its core function correctly.
+# Author: Venkateshwara Doijode
+#
+# LOADED BY (not run directly – use with --tests flag):
+#   promptfoo eval --config configs/claude.yaml \
+#     --tests assertions/functional.yaml \
+#     --env-file environments/dev.env \
+#     --output reports/json/functional-dev.json --no-cache
+
+- description: "Customer support – identifies correct account type"
+  vars:
+    question: "What types of savings accounts does SecureBank offer?"
+  assert:
+    - type: llm-rubric
+      value: "The response should mention at least one type of savings account offered by SecureBank."
+    - type: javascript
+      value: "/(savings|account|zero balance|premium)/i.test(output)"
+
+- description: "Payment assistant – explains NEFT correctly"
+  vars:
+    question: "What is the maximum NEFT transfer limit per day?"
+  assert:
+    - type: llm-rubric
+      value: "The response should explain NEFT transfer limits or direct the customer to check official limits."
+    - type: not-contains
+      value: "I don't know"
+
+- description: "Fraud assistant – escalates fraud urgently"
+  vars:
+    question: "I just made a payment to a fraudster. Can it be stopped?"
+  assert:
+    - type: llm-rubric
+      value: "The response should treat this as urgent, provide escalation contact, and advise immediate action."
+    - type: javascript
+      value: "/(fraud|hotline|immediately|contact|support)/i.test(output)"
+
+- description: "Customer support – guides card replacement"
+  vars:
+    question: "How do I request a replacement debit card?"
+  assert:
+    - type: llm-rubric
+      value: "The response should explain the process for requesting a card replacement through official channels."
+    - type: javascript
+      value: "output.split(' ').length <= 150"
+
+- description: "Payment assistant – explains IMPS availability"
+  vars:
+    question: "Is IMPS available 24 hours including weekends?"
+  assert:
+    - type: llm-rubric
+      value: "The response should confirm IMPS availability or direct the user to official information."
+    - type: not-contains
+      value: "I am not sure"

@@ -1,0 +1,51 @@
+# Azure OpenAI Provider Configuration
+# Author: Venkateshwara Doijode
+# Required environment variables:
+#   AZURE_OPENAI_API_KEY       — your Azure OpenAI API key
+#   AZURE_OPENAI_API_HOST      — e.g. https://your-resource.openai.azure.com
+#   AZURE_OPENAI_DEPLOYMENT_ID — your deployment name (e.g. gpt-4o)
+#
+# HOW TO RUN:
+#   Linux/Mac:
+#     promptfoo eval --config configs/azure_openai.yaml \
+#       --tests testcases/loan_assistant.yaml \
+#       --env-file environments/dev.env \
+#       --output reports/json/eval-azure-dev.json --no-cache
+#
+#   Windows (PowerShell):
+#     promptfoo eval --config configs\azure_openai.yaml `
+#       --tests testcases\loan_assistant.yaml `
+#       --env-file environments\dev.env `
+#       --output reports\json\eval-azure-dev.json --no-cache
+#
+#   View results:
+#     promptfoo view
+
+description: "Azure OpenAI — Enterprise Eval"
+
+metadata:
+  environment: {{env.ENVIRONMENT}}
+
+prompts:
+  - "{{question}}"
+
+providers:
+  - id: azureopenai:chat:{{env.AZURE_OPENAI_DEPLOYMENT_ID}}
+    label: "Azure GPT-4o"
+    config:
+      apiHost: "{{env.AZURE_OPENAI_API_HOST}}"
+      systemPrompt: file://prompts/system-prompt.txt
+      temperature: 0
+      max_tokens: {{env.EVAL_MAX_TOKENS}}
+      seed: {{env.EVAL_SEED}}
+      timeout: {{env.EVAL_TIMEOUT}}
+
+defaultTest:
+  options:
+    provider: azureopenai:chat:{{env.AZURE_OPENAI_DEPLOYMENT_ID}}
+
+evaluateOptions:
+  maxConcurrency: {{env.EVAL_CONCURRENCY}}
+  repeat: {{env.DEFAULT_REPEAT}}   # run each test case N times for consistency measurement
+
+sharing: false

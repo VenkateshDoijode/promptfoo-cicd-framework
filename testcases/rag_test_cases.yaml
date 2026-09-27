@@ -1,0 +1,99 @@
+# RAG Test Cases - SecureBank Loan Assistant
+# Author: Venkateshwara Doijode
+#
+# Each test case simulates what the retrieval layer returns as {{context}}.
+# Assertions verify the model answers faithfully from the context only.
+#
+# LOADED BY:
+#   promptfoo eval --config configs/rag.yaml \
+#     --tests testcases/rag_test_cases.yaml \
+#     --env-file environments/dev.env \
+#     --output reports/json/rag-eval-dev.json --no-cache
+# ======================================================================
+
+# ----------------------------------------------------------------------
+# # 1. Context Relevance + Factuality
+# ----------------------------------------------------------------------
+- description: "Home loan tenure - correct context retrieved, factual answer"
+  vars:
+    question: "What is the maximum tenure for a home loan at SecureBank?"
+    context: |
+      SecureBank Home Loan Terms (v3.2, March 2025):
+      Home loans are available for tenures of 5 to 30 years.
+      The maximum tenure of 30 years applies to salaried applicants below 40 years of age.
+      Self-employed applicants are eligible for a maximum tenure of 20 years.
+  assert:
+    - type: context-relevance
+    - type: context-recall
+    - type: factuality
+      value: "The maximum tenure is 30 years for salaried applicants below 40, and 20 years for self-employed applicants."
+    - type: contains
+      value: "30"
+
+# ----------------------------------------------------------------------
+# # 2. Faithfulness - model must not add facts outside the context
+# ----------------------------------------------------------------------
+- description: "Personal loan documents - answer stays within context"
+  vars:
+    question: "What documents do I need to apply for a personal loan?"
+    context: |
+      SecureBank Personal Loan - Required Documents:
+      1. Government-issued photo ID (Aadhaar / Passport / Voter ID)
+      2. Last 3 months salary slips
+      3. Last 6 months bank statements
+      4. Address proof (utility bill or rental agreement)
+  assert:
+    - type: context-faithfulness
+    - type: answer-relevance
+    - type: not-contains
+      value: "PAN card"      # PAN card is not mentioned in the context
+    - type: not-contains
+      value: "credit report" # credit report is not mentioned in the context
+    - type: python
+      value: file://validators/rag_faithfulness.py
+      # Custom scorer: checks hallucinated numbers, term coverage, deflection
+
+# ----------------------------------------------------------------------
+# # 3. Answer Relevance - model must directly answer, not deflect
+# ----------------------------------------------------------------------
+- description: "Prepayment penalty - answer addresses the question directly"
+  vars:
+    question: "Can I prepay my home loan without a penalty?"
+    context: |
+      SecureBank Prepayment Policy:
+      Floating rate home loan customers may prepay any amount at any time without penalty.
+      Fixed rate home loan customers are charged a prepayment fee of 2% of the outstanding principal.
+  assert:
+    - type: answer-relevance
+    - type: context-faithfulness
+    - type: not-contains
+      value: "Please visit your nearest branch"  # must not deflect
+
+# ----------------------------------------------------------------------
+# # 4. Full RAG pipeline - all assertions combined
+# ----------------------------------------------------------------------
+- description: "Full RAG validation - auto loan eligibility"
+  vars:
+    question: "Who is eligible for a SecureBank auto loan?"
+    context: |
+      SecureBank Auto Loan Eligibility:
+      - Age: 21 to 65 years at loan maturity
+      - Employment: Salaried or self-employed with minimum 2 years of work experience
+      - Minimum monthly income: INR 20,000 for salaried, INR 25,000 for self-employed
+      - Credit score: Minimum 700 required
+      - Vehicle: New or used cars up to 5 years old
+  assert:
+    - type: context-relevance
+    - type: context-recall
+    - type: context-faithfulness
+    - type: answer-relevance
+    - type: factuality
+      value: >
+        Eligibility requires age 21 to 65, minimum 2 years work experience,
+        monthly income of INR 20,000 (salaried) or INR 25,000 (self-employed),
+        and a credit score of at least 700.
+    - type: not-contains
+      value: "I don't have access to"
+    - type: python
+      value: file://validators/rag_faithfulness.py
+      # Custom scorer: checks hallucinated numbers, term coverage, deflection
