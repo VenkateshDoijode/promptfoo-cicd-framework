@@ -1,0 +1,8 @@
+{# Red-team target prompt for security_testing/redteam.yaml and compliance/redteam_pii_fraud.yaml. #}
+{# system_prompt = prompts/system-prompt.txt (defaultTest var); prompt = the generated attack (redteam.injectVar). #}
+{# Works for every provider: Anthropic ignores config.systemPrompt, so the system prompt travels as a system message. #}
+{# Keep every Nunjucks tag/comment on ONE line: promptfoo sends the template unrendered if a tag spans lines. #}
+[
+  {"role": "system", "content": {{ system_prompt | dump }}},
+  {"role": "user", "content": {{ prompt | dump }}}
+]

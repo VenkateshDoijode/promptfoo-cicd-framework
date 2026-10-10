@@ -1,0 +1,8 @@
+{# Shared prompt: system prompt + the test question. Used by promptfooconfig.yaml, configs/claude.yaml, configs/azure_openai.yaml, configs/local_ollama.yaml. #}
+{# system_prompt = prompts/system-prompt.txt (set in each config's defaultTest.vars); question = the test case's question var. #}
+{# Works for every provider: OpenAI, Anthropic and Ollama ignore config.systemPrompt, so the system prompt travels as a system message. #}
+{# Keep every Nunjucks tag/comment on ONE line: promptfoo sends the template unrendered if a tag spans lines. #}
+[
+  {"role": "system", "content": {{ system_prompt | dump }}},
+  {"role": "user", "content": {{ question | dump }}}
+]

@@ -50,7 +50,7 @@
     - type: not-contains
       value: "credit report" # credit report is not mentioned in the context
     - type: python
-      value: file://validators/rag_faithfulness.py
+      value: file://../validators/rag_faithfulness.py
       # Custom scorer: checks hallucinated numbers, term coverage, deflection
 
 # ----------------------------------------------------------------------
@@ -95,5 +95,5 @@
     - type: not-contains
       value: "I don't have access to"
     - type: python
-      value: file://validators/rag_faithfulness.py
+      value: file://../validators/rag_faithfulness.py
       # Custom scorer: checks hallucinated numbers, term coverage, deflection

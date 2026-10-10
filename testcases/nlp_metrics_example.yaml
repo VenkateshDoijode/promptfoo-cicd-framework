@@ -36,7 +36,7 @@
       20 years.
   assert:
     - type: python
-      value: file://validators/bleu.py
+      value: file://../validators/bleu.py
     - type: llm-rubric
       value: "Response should mention the 30-year maximum tenure and distinguish between salaried and self-employed applicants."
 
@@ -55,7 +55,7 @@
       a utility bill or rental agreement.
   assert:
     - type: python
-      value: file://validators/rouge.py
+      value: file://../validators/rouge.py
     - type: llm-rubric
       value: "Response should list identity proof, salary slips, bank statements, and address proof."
 
@@ -76,7 +76,7 @@
       increase total interest paid.
   assert:
     - type: python
-      value: file://validators/meteor.py
+      value: file://../validators/meteor.py
     - type: llm-rubric
       value: "Response should explain the three EMI factors (principal, rate, tenure) and ideally mention the formula."
 
@@ -98,7 +98,7 @@
       this loan until the case is resolved.
   assert:
     - type: python
-      value: file://validators/bert_score.py
+      value: file://../validators/bert_score.py
     - type: llm-rubric
       value: "Response must treat the situation as urgent, provide escalation steps, and advise the customer to contact the fraud helpline immediately."
 
@@ -120,13 +120,13 @@
       not more than five years old.
   assert:
     - type: python
-      value: file://validators/bleu.py
+      value: file://../validators/bleu.py
     - type: python
-      value: file://validators/rouge.py
+      value: file://../validators/rouge.py
     - type: python
-      value: file://validators/meteor.py
+      value: file://../validators/meteor.py
     - type: python
-      value: file://validators/bert_score.py
+      value: file://../validators/bert_score.py
     - type: llm-rubric
       value: >
         Response must cover: age range 21–65, minimum 2 years work experience,

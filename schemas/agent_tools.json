@@ -1,0 +1,212 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "check_loan_eligibility",
+      "description": "Checks whether the customer meets SecureBank's loan eligibility criteria based on their monthly income and the loan type requested.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "monthly_income": {
+            "type": "number",
+            "description": "Customer's monthly income in INR (numeric, not string)"
+          },
+          "loan_type": {
+            "type": "string",
+            "enum": ["personal loan", "home loan", "auto loan", "business loan"],
+            "description": "Type of loan the customer is applying for"
+          }
+        },
+        "required": ["monthly_income", "loan_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_document_requirements",
+      "description": "Returns the list of documents required for a specific SecureBank loan application.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "loan_type": {
+            "type": "string",
+            "enum": ["personal loan", "home loan", "auto loan", "business loan"],
+            "description": "Type of loan the customer is applying for"
+          }
+        },
+        "required": ["loan_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_account_balance",
+      "description": "Retrieves the current account balance or outstanding loan balance for the authenticated customer session.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "check_payment_status",
+      "description": "Retrieves the status of a specific payment or EMI transaction.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "description": "Optional payment reference ID to look up"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "escalate_to_support",
+      "description": "Escalates the customer's issue to a human support agent. Use for fraud reports, complex complaints, unresolved issues, or any situation outside the agent's scope.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Clear description of the issue being escalated (minimum 20 characters)"
+          }
+        },
+        "required": ["reason"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "route_to_loan_agent",
+      "description": "Transfers the conversation to the SecureBank Loan Agent which handles eligibility, EMI calculations, and documents.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "monthly_income": {
+            "type": "number",
+            "description": "Customer's monthly income in INR if already known"
+          },
+          "context": {
+            "type": "string",
+            "description": "Summary of conversation context to pass to the Loan Agent"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "route_to_fraud_agent",
+      "description": "Transfers the conversation to the SecureBank Fraud Agent for identity theft, unauthorised transactions, or suspicious activity.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Description of the fraud or suspicious activity reported"
+          }
+        },
+        "required": ["reason"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "route_to_payment_agent",
+      "description": "Transfers the conversation to the SecureBank Payment Agent for failed payments, duplicate charges, or EMI disputes.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "type": "string",
+            "description": "Brief description of the payment issue"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "route_to_support_agent",
+      "description": "Transfers the conversation to a human support agent for complex, long-standing, or unresolved complaints that automated agents cannot resolve.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "type": "string",
+            "description": "Full summary of the issue and previous resolution attempts"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "mcp_check_loan_eligibility",
+      "description": "MCP-protocol version of check_loan_eligibility. Sends a structured request to the SecureBank eligibility MCP server and returns a structured JSON response.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "monthly_income": {
+            "type": "number",
+            "description": "Customer's monthly income in INR (numeric)"
+          },
+          "loan_type": {
+            "type": "string",
+            "enum": ["personal loan", "home loan", "auto loan", "business loan"],
+            "description": "Type of loan the customer is applying for"
+          }
+        },
+        "required": ["monthly_income", "loan_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "mcp_get_loan_balance",
+      "description": "MCP-protocol version of get_account_balance. Retrieves outstanding loan balance from the SecureBank loan management MCP server.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "mcp_get_document_checklist",
+      "description": "MCP-protocol version of get_document_requirements. Retrieves the current document checklist from the SecureBank document MCP server.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "loan_type": {
+            "type": "string",
+            "enum": ["personal loan", "home loan", "auto loan", "business loan"],
+            "description": "Type of loan the customer is applying for"
+          }
+        },
+        "required": ["loan_type"]
+      }
+    }
+  }
+]

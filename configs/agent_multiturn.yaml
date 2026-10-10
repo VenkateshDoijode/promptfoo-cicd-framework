@@ -1,0 +1,78 @@
+# configs/agent_multiturn.yaml — SecureBank AI Agent: REAL multi-turn conversation eval
+# Author: Venkateshwara Doijode
+#
+# WHAT IS THIS?
+# Unlike agent_testing/memory_tests.yaml (which pastes a scripted {{history}} into one
+# prompt), this config sends each conversation turn as a separate request. Turn N
+# receives the model's ACTUAL replies from turns 1..N-1 as proper user/assistant
+# messages, via promptfoo's built-in {{conversation}} variable.
+#
+# Tests that share the same `metadata.conversationId` form one conversation and run
+# in file order. Each turn is asserted on its own — a leak or capitulation in any turn
+# fails that turn.
+#
+# Kept separate from configs/agent.yaml on purpose: a prompt that references
+# `conversation` forces concurrency 1 and accumulates history across tests, which
+# would contaminate the independent single-turn suites.
+#
+# Shared with configs/agent.yaml (single source of truth):
+#   prompts/agent-system-prompt.txt  — system prompt
+#   schemas/agent_tools.json         — tool registry
+#
+# LIMITATION: tools are offered but not executed. If the model calls a tool in an
+# earlier turn, the tool_use JSON is carried forward as assistant text; no tool
+# result is returned. Conversations here therefore focus on behaviour across turns
+# (memory, consistency, pressure, PII, injection) rather than tool execution.
+# A test may set `mcp_tool_response` to inject mock tool data into that turn only
+# (used by the conv-tool-inject conversation for tool injection across turns).
+#
+# HOW TO RUN:
+#   Linux/Mac:
+#     promptfoo eval --config configs/agent_multiturn.yaml \
+#       --env-file environments/dev.env \
+#       --output reports/json/agent-multiturn-dev.json --no-cache
+#
+#   Windows (PowerShell):
+#     promptfoo eval --config configs/agent_multiturn.yaml `
+#       --env-file environments/dev.env `
+#       --output reports/json/agent-multiturn-dev.json --no-cache
+#
+#   Keep `--no-cache`: a cached turn would replay an old reply into later turns.
+# ---------------------------------------------------------------------------
+
+description: "SecureBank AI Agent - Real Multi-Turn Conversation Eval"
+
+metadata:
+  environment: "{{env.ENVIRONMENT}}"
+
+prompts:
+  - file://../prompts/agent_chat_multiturn.json
+
+providers:
+  - id: "{{env.CLAUDE_MODEL_PRIMARY}}"
+    label: "Claude (Agent, multi-turn)"
+    config:
+      temperature: 0
+      max_tokens: 500
+      timeout: 30000
+      tools: file://../schemas/agent_tools.json
+      max_tool_calls: 5
+
+tests: file://../agent_multi_turn_testing/conversation_tests.yaml
+
+defaultTest:
+  vars:
+    system_prompt: file://../prompts/agent-system-prompt.txt
+  options:
+    provider: "{{env.CLAUDE_MODEL_FAST}}" # llm-rubric judge: Claude Haiku (same as configs/claude.yaml)
+  assert:
+    # cost of the AGENT call only (judge calls not included); claude-sonnet-4-6 at $3/$15 per
+    # 1M tokens. Per TURN: history grows each turn (longest conversation, 4 turns,
+    # reaches ~4,000 input tokens) -> $0.02 worst case, so the limit is higher.
+    - type: cost
+      threshold: 0.04 # USD per turn
+
+evaluateOptions:
+  maxConcurrency: 1 # turns must run in order (promptfoo also enforces this for {{conversation}})
+
+sharing: false

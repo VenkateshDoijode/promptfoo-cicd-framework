@@ -1,0 +1,16 @@
+{# Real multi-turn agent prompt. Used by configs/agent_multiturn.yaml. #}
+{# _conversation = the model's ACTUAL earlier replies for tests sharing metadata.conversationId. #}
+{# Optional mcp_tool_response: prepended to THIS turn only (same format as agent_chat.json); later turns see it via history. #}
+{# Keep every Nunjucks tag/comment on ONE line: promptfoo sends the template unrendered if a tag spans lines. #}
+[
+  {"role": "system", "content": {{ system_prompt | dump }}},
+  {%- for completion in _conversation %}
+  {"role": "user", "content": {{ completion.input | dump }}},
+  {"role": "assistant", "content": {{ (completion.output or "(no reply)") | dump }}},
+  {%- endfor %}
+  {%- set user_msg %}{% if mcp_tool_response %}[MCP Tool Response]:
+{{ mcp_tool_response }}
+
+Customer: {% endif %}{{ question }}{% endset %}
+  {"role": "user", "content": {{ user_msg | dump }}}
+]

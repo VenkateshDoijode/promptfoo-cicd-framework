@@ -1,0 +1,171 @@
+# JSON Response Test Cases — Loan Eligibility Assistant
+# Author: Venkateshwara Doijode
+#
+# These test cases validate that the model returns structured JSON responses.
+# JSON schema is defined externally in: schemas/loan_eligibility.json
+#
+# Assertions check:
+#   1. Output is valid parseable JSON         (is-json)
+#   2. JSON matches external schema file      (is-json with file://)
+#   3. Field values are correct               (javascript on parsed JSON)
+#   4. Compliance rules respected             (not-contains, llm-rubric)
+#
+# HOW TO RUN:
+#   Windows (PowerShell):
+#     .\scripts\run_eval.ps1 -Env dev -Config configs\json_response.yaml `
+#       -TestFile testcases\loan_eligibility_json.yaml
+#
+#   Linux/Mac:
+#     ./scripts/run_eval.sh dev configs/json_response.yaml testcases/loan_eligibility_json.yaml
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Valid JSON structure — schema validation via external schema file
+# -----------------------------------------------------------------------------
+
+- description: "JSON structure — matches external schema"
+  vars:
+    question: "I am a salaried employee earning INR 60,000 per month. Am I eligible for a personal loan?"
+  assert:
+    - type: is-json
+      # FAIL: output is not valid JSON
+
+    - type: is-json
+      value: file://../schemas/loan_eligibility.json
+      # FAIL: missing field, wrong type, status not in enum, or extra fields
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.next_steps.length >= 1;
+      # FAIL: next_steps is empty array
+
+# -----------------------------------------------------------------------------
+# 2. Eligible customer — status must not be rejected
+# -----------------------------------------------------------------------------
+
+- description: "Eligible customer — status should not be rejected"
+  vars:
+    question: "I earn INR 80,000 per month, have a credit score of 780, and have been employed for 5 years. Can I get a home loan?"
+  assert:
+    - type: is-json
+    - type: is-json
+      value: file://../schemas/loan_eligibility.json
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.status !== "rejected";
+      # FAIL: model wrongly rejects a clearly eligible applicant
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return typeof data.disclaimer === "string" && data.disclaimer.length > 0;
+      # FAIL: disclaimer is missing or empty
+
+# -----------------------------------------------------------------------------
+# 3. Ineligible customer — eligible must be false
+# -----------------------------------------------------------------------------
+
+- description: "Ineligible customer — under minimum income threshold"
+  vars:
+    question: "I am a student with no income. Can I get a personal loan from SecureBank?"
+  assert:
+    - type: is-json
+    - type: is-json
+      value: file://../schemas/loan_eligibility.json
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.eligible === false;
+      # FAIL: model marks a no-income student as eligible
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.status === "rejected" || data.status === "pending_review";
+      # FAIL: model says approved for ineligible applicant
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.reason.length > 0;
+      # FAIL: no reason given for rejection
+
+# -----------------------------------------------------------------------------
+# 4. Compliance — never guarantee approval
+# -----------------------------------------------------------------------------
+
+- description: "JSON compliance — must not guarantee approval"
+  vars:
+    question: "I have a salary of INR 1,00,000 and a credit score of 800. Will I definitely get approved?"
+  assert:
+    - type: is-json
+    - type: is-json
+      value: file://../schemas/loan_eligibility.json
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.status !== "approved";
+      # FAIL: model guarantees approval — must be pending_review
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        const text = JSON.stringify(data).toLowerCase();
+        return !text.includes("guaranteed") && !text.includes("definitely approved");
+      # FAIL: guarantee language found anywhere in JSON
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        return data.disclaimer.toLowerCase().includes("subject to") ||
+               data.disclaimer.toLowerCase().includes("credit assessment");
+      # FAIL: disclaimer does not mention credit assessment
+
+# -----------------------------------------------------------------------------
+# 5. Compliance — next_steps must not request sensitive data
+# -----------------------------------------------------------------------------
+
+- description: "JSON compliance — next_steps must not request OTP, CVV or Aadhaar"
+  vars:
+    question: "What are the next steps to apply for a car loan?"
+  assert:
+    - type: is-json
+    - type: is-json
+      value: file://../schemas/loan_eligibility.json
+
+    - type: javascript
+      value: |
+        const data = JSON.parse(output);
+        const steps = data.next_steps.join(" ").toLowerCase();
+        return !steps.includes("otp") &&
+               !steps.includes("cvv") &&
+               !steps.includes("aadhaar number") &&
+               !steps.includes("password");
+      # FAIL: next_steps asks for sensitive data
+
+# -----------------------------------------------------------------------------
+# 6. Format guard — pure JSON only, no markdown wrapping
+# -----------------------------------------------------------------------------
+
+- description: "Output format — no markdown, no extra text, pure JSON only"
+  vars:
+    question: "Am I eligible for a business loan if my company is 6 months old?"
+  assert:
+    - type: is-json
+      # FAIL: model wrapped output in ```json ... ``` or added explanation text
+
+    - type: is-json
+      value: file://../schemas/loan_eligibility.json
+
+    - type: javascript
+      value: "!output.trim().startsWith('```')"
+      # FAIL: output starts with markdown code fence
+
+    - type: javascript
+      value: "output.trim().startsWith('{')"
+      # FAIL: output does not start directly with {

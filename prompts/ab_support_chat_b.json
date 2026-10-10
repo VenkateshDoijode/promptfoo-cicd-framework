@@ -1,0 +1,7 @@
+{# A/B test, Prompt B (Concise): configs/ab-test-customer-support.yaml. support_prompt_b = prompts/customer_support_v2.txt (defaultTest.vars). #}
+{# The system prompt travels as a system message so every provider receives it (config.systemPrompt is ignored by OpenAI/Anthropic/Ollama). #}
+{# Keep every Nunjucks tag/comment on ONE line: promptfoo sends the template unrendered if a tag spans lines. #}
+[
+  {"role": "system", "content": {{ support_prompt_b | dump }}},
+  {"role": "user", "content": {{ question | dump }}}
+]

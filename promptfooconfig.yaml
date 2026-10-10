@@ -23,17 +23,17 @@ metadata:
   environment: {{env.ENVIRONMENT}}
 
 prompts:
-  - "{{question}}"
+  # system prompt + question 
+  - file://prompts/chat_with_system.json
 
 providers:
   - id: "{{env.EVAL_MODEL_PRIMARY}}"
     label: "GPT-4o (Best)"
     config: &openai_defaults
-      systemPrompt: file://prompts/system-prompt.txt
       temperature: 0
-      max_tokens: {{env.EVAL_MAX_TOKENS}}
-      seed: {{env.EVAL_SEED}}
-      timeout: {{env.EVAL_TIMEOUT}}
+      max_tokens: 500
+      seed: 42
+      timeout: 30000   #{{env.EVAL_TIMEOUT}}
 
   - id: "{{env.EVAL_MODEL_SECONDARY}}"
     label: "GPT-4o Mini (Cheap)"
@@ -41,16 +41,18 @@ providers:
       <<: *openai_defaults
 
   - id: "{{env.OPENAI_MODEL_TURBO}}"
-    label: "GPT-4 Turbo"
+    label: "GPT-5.6 Sol"
     config:
       <<: *openai_defaults
 
   - id: "{{env.OPENAI_MODEL_LEGACY}}"
-    label: "GPT-3.5 (Baseline)"
+    label: "GPT-5.6 (Baseline)"
     config:
       <<: *openai_defaults
 
 defaultTest:
+  vars:
+    system_prompt: file://prompts/system-prompt.txt
   options:
     provider: "{{env.JUDGE_MODEL}}"   # cheaper model used as llm-rubric judge
 
@@ -58,7 +60,7 @@ tests:
   - file://testcases/loan_assistant.yaml
 
 evaluateOptions:
-  maxConcurrency: {{env.EVAL_CONCURRENCY}}
-  repeat: {{env.DEFAULT_REPEAT}}   # run each test case N times for consistency measurement
+  maxConcurrency: 5  #{{env.EVAL_CONCURRENCY}}
+ # repeat: {{env.DEFAULT_REPEAT}}   # run each test case N times for consistency measurement
 
 sharing: false

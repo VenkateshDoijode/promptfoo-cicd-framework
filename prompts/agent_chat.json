@@ -1,0 +1,18 @@
+{# Single-turn agent prompt (Nunjucks -> chat JSON). Used by configs/agent.yaml. #}
+{# system_prompt = prompts/agent-system-prompt.txt (defaultTest var); context/history/mcp_tool_response optional. #}
+{# Keep every Nunjucks tag/comment on ONE line: promptfoo sends the template unrendered if a tag spans lines. #}
+{%- set user_msg -%}
+{% if context %}{{ context }}
+
+{% endif %}{% if history %}Conversation history:
+{{ history }}
+
+{% endif %}{% if mcp_tool_response %}[MCP Tool Response]:
+{{ mcp_tool_response }}
+
+{% endif %}Customer: {{ question }}
+{%- endset -%}
+[
+  {"role": "system", "content": {{ system_prompt | dump }}},
+  {"role": "user", "content": {{ user_msg | trim | dump }}}
+]
