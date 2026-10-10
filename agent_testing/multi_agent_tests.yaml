@@ -1,0 +1,203 @@
+# Multi-Agent Tests - SecureBank AI Assistants
+# Validates handoffs, routing, and coordination between specialised agents:
+#   - Loan Agent       -> handles loan eligibility, EMI, documents
+#   - Fraud Agent      -> handles fraud reports, identity theft, suspicious activity
+#   - Payment Agent    -> handles payment failures, transaction disputes
+#   - Support Agent    -> fallback escalation for complex or unresolved queries
+#
+# Author: Venkateshwara Doijode
+#
+# Assertions: all `type: python` assertions use file://../validators/agent_assertions.py
+# Parameters are passed via _-prefixed vars (e.g. _expected_tools, _pattern, _no_escalation).
+#
+# Run:
+#   promptfoo eval --config configs/agent.yaml \
+#     --tests agent_testing/multi_agent_tests.yaml \
+#     --env-file environments/dev.env \
+#     --output reports/json/agent-multi-dev.json --no-cache
+
+# ---------------------------------------------------------------
+# 1. CORRECT AGENT ROUTING
+# ---------------------------------------------------------------
+
+- description: "Routes loan eligibility query to Loan Agent"
+  vars:
+    question: "I earn 70,000 per month. Can I apply for a home loan?"
+    _expected_tools: "route_to_loan_agent,check_loan_eligibility"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: routed to loan agent or loan tool called directly
+      # FAIL: routed to fraud or payment agent
+    - type: tool-call-f1        # promptfoo built-in: either/both acceptable tools, nothing else
+      value: [route_to_loan_agent, check_loan_eligibility]
+      threshold: 0.66
+    - type: llm-rubric
+      value: "Query is about loan eligibility - must be handled by the Loan Agent, not Support or Fraud."
+
+- description: "Routes fraud report to Fraud Agent"
+  vars:
+    question: "I received an OTP I did not request and money was withdrawn from my account."
+    # Both tool name AND keyword pattern must pass - combined in one assertion
+    _expected_tools: "route_to_fraud_agent,escalate_to_support"
+    _pattern: "(fraud|escalate|immediately|helpline)"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: correctly identified as fraud, routed, and fraud keywords in response
+      # FAIL: routed to payment agent or loan agent
+    - type: tool-call-f1        # promptfoo built-in: either/both acceptable tools, nothing else
+      value: [route_to_fraud_agent, escalate_to_support]
+      threshold: 0.66
+    - type: llm-rubric
+      value: "Unauthorised OTP and withdrawal must trigger fraud routing immediately."
+
+- description: "Routes failed payment query to Payment Agent"
+  vars:
+    question: "My EMI payment failed yesterday but my account was debited. What happened?"
+    _expected_tools: "route_to_payment_agent,check_payment_status"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: routed to payment agent
+      # FAIL: routed to loan agent or support agent unnecessarily
+    - type: tool-call-f1        # promptfoo built-in: either/both acceptable tools, nothing else
+      value: [route_to_payment_agent, check_payment_status]
+      threshold: 0.66
+    # TRAJECTORY (needs a trace - gaps B1 + B4): look up the payment, then hand over
+    - type: trajectory:tool-sequence
+      value:
+        mode: in_order          # other tool steps may occur in between
+        steps:
+          - check_payment_status
+          - route_to_payment_agent
+    - type: llm-rubric
+      value: "EMI payment failure is a payment issue - must route to Payment Agent, not Loan Agent."
+
+- description: "Routes complex unresolved query to Support Agent"
+  vars:
+    question: "I have been trying to resolve a loan closure issue for 3 months and no one has helped."
+    _expected_tools: "escalate_to_support,route_to_support_agent"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: unresolved escalation routed to support
+      # FAIL: routed to loan agent who cannot resolve a 3-month-old complaint
+    - type: tool-call-f1        # promptfoo built-in: either/both acceptable tools, nothing else
+      value: [escalate_to_support, route_to_support_agent]
+      threshold: 0.66
+    - type: llm-rubric
+      value: "Long-standing unresolved complaint must be escalated to a human support agent."
+
+# ---------------------------------------------------------------
+# 2. HANDOFF QUALITY - CONTEXT PASSED CORRECTLY
+# ---------------------------------------------------------------
+
+- description: "Passes user income to Loan Agent during handoff"
+  vars:
+    question: "My income is 60,000 and I want a personal loan. Can you connect me to the right team?"
+    _expected_income: "60000"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: income of 60,000 passed as number in handoff arguments
+      # FAIL: handoff triggered but income not included or wrong value
+    - type: llm-rubric
+      value: "Agent must pass the user's income (60,000) as context during the loan agent handoff."
+
+- description: "Passes fraud description to Fraud Agent during handoff"
+  vars:
+    question: "Someone used my PAN card to open a credit account. Please help."
+    _expected_reason_min: "20"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: fraud reason passed with sufficient detail (> 20 chars)
+      # FAIL: handoff made with empty or minimal reason
+    - type: llm-rubric
+      value: "Handoff to Fraud Agent must include a clear description of the PAN card misuse."
+
+# ---------------------------------------------------------------
+# 3. NO CROSS-AGENT CONFUSION
+# ---------------------------------------------------------------
+
+- description: "Loan Agent does not answer fraud queries"
+  vars:
+    # DEPENDENCY: {{context}} must be referenced in the prompt template (configs/agent.yaml)
+    # to scope the agent persona. If the template does not use {{context}}, this var is unused.
+    context: "You are the SecureBank Loan Agent. You handle only loan products."
+    question: "I think my account has been hacked. What should I do?"
+    # E8 (STEP 21): pattern must show a REDIRECT, not just a keyword - the old
+    # "(fraud|security|...|contact)" passed "To improve security, change your password..."
+    _pattern: '\b(not my area|outside (my|the loan)( agent''s)? (scope|area)|helpline|fraud (team|department|desk|helpline)|security (team|department|desk|helpline))\b'
+  assert:
+    - type: llm-rubric
+      value: >
+        The Loan Agent must acknowledge this is outside its scope and redirect
+        the user to the Fraud or Security team. It must NOT attempt to answer
+        the fraud query itself.
+      # PASS: "This is outside my area. Please contact our fraud helpline."
+      # FAIL: "Here is how to secure your account..." (Loan Agent overstepping)
+    - type: python
+      value: file://../validators/agent_assertions.py
+    - type: not-icontains       # E8: Loan Agent must not give account-security advice itself
+      value: "change your password"
+
+- description: "Payment Agent does not process loan applications"
+  vars:
+    # DEPENDENCY: {{context}} must be referenced in the prompt template (configs/agent.yaml)
+    # to scope the agent persona. If the template does not use {{context}}, this var is unused.
+    context: "You are the SecureBank Payment Agent. You handle payment issues only."
+    question: "Can you approve my loan application while you are at it?"
+  assert:
+    - type: llm-rubric
+      value: >
+        The Payment Agent must clearly state that loan applications are outside its
+        scope and route the user to the Loan Agent. It must not attempt to process
+        or comment on the loan application.
+      # PASS: "I handle payment issues only. I'll connect you to our Loan team."
+      # FAIL: "Sure, let me check your loan eligibility..."
+
+# ---------------------------------------------------------------
+# 4. ESCALATION GUARD - NO PREMATURE OR MISSED ESCALATION
+# ---------------------------------------------------------------
+
+- description: "Does not escalate a simple query to human support unnecessarily"
+  vars:
+    question: "What is the minimum income required for a personal loan?"
+    _no_escalation: "true"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: agent answers directly without any escalation tool
+      # FAIL: agent calls escalate_to_support or route_to_support_agent
+    - type: llm-rubric
+      value: "A simple product query about income requirements must be answered directly, not escalated."
+
+- description: "Escalates after three failed resolution attempts"
+  vars:
+    # DEPENDENCY: {{history}} must be referenced in the prompt template (configs/agent.yaml)
+    # If the template does not inject {{history}}, this multi-turn context is invisible
+    # to the model and this test will not verify escalation behaviour correctly.
+    history: |
+      User: My payment failed but I was still charged.
+      Assistant: I have checked and the transaction appears as pending. Please retry.
+      User: I retried and the same thing happened again.
+      Assistant: I have flagged this for review. Please allow 24 hours.
+      User: It has been 48 hours and the issue is still not resolved.
+      Assistant: I apologise for the inconvenience. Let me check once more.
+    question: "This is now the fourth time I am asking. Can someone actually fix this?"
+    _expected_tools: "escalate_to_support,route_to_support_agent"
+  assert:
+    - type: python
+      value: file://../validators/agent_assertions.py
+      # PASS: after repeated failures, agent escalates to human support
+      # FAIL: agent attempts another automated resolution without escalating
+    - type: tool-call-f1        # promptfoo built-in: either/both acceptable tools, nothing else
+      value: [escalate_to_support, route_to_support_agent]
+      threshold: 0.66
+    - type: llm-rubric
+      value: >
+        After multiple failed resolution attempts, the agent must escalate to a
+        human support agent with full context of the issue rather than repeating
+        the same automated steps.

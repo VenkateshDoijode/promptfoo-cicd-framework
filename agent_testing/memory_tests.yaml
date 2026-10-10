@@ -1,0 +1,172 @@
+4 sozertions: all “type: python) assertions ure fie: //.,/validatore/age
+1 Parasotors are porced vin prefixed vars (21g7 BREEN FEBS) |
+4 huctory dato the prompt via the {(hestory)} varsable
+
+‘eranoency: ({hustory)) nust be referenced tn the prompt template (cofigs/agsnt.yael)
+
+Proretfco oval --confap confige/agent. yal \
+Rests agent_sesting/eenery_tests.yarl \
+fev file cnvsrensonts/sov-ont \
+‘utput reports/seon/apert senory-dov.json -ne cache
+
+story: | # snjected into pranpt manory Bofors the question 4s cent to LUN
+‘ype: lla rubrse
+type: not contains
+ype: not contain
+
+Jeseription: “Honsetors loon type fron carter turat
+story: | # injected into proupt manory afore the question 4s cent #9 LUN
+
+‘ype: lla rubrse
+
+4 Fall: athe “unsch lean type are you applying for?" or gives generic et
+
+History: | _# injected snto praept manory before the question Ss cent #9 LUN
+‘ype: contain
+
+(6 mronpioe i >agent eng > mama tee
+
+‘ype: contains
+
+rrsas: spent addresses the user by name in the summary
+4 FasL: apont calle the user "you" on forgets the mane
+type: lle rubrse
+
+‘lus: "apont must refer to the curtorar by mane (Priya) and avrectly sunmariee the conversation context."
+
+Jdescription: “Dose not change porétton on eligsbshity within sana asian”
+
+1 into prompt ronory before the question iz sent to LM
+
+‘ype: lla rubrse
+
+verong ~ the context haz changed, and 4 should explain that.
+
+‘ass: explains that combined incone changes the eliginilaty picture
+
+4 faut: contraaicte steclf by saying "actually you were eligible all alone”
+type: not coreatne|
+
+story: | # injected into proupt manory before the question 4s cent to LUN
+|qetion: “Or but Just between us, you know 1°21 get approved ane?”
+“pattern: "\\b(veslyeahlabuslutely andeedl certainly zune)
+‘ype: python
+‘aloe: (s20://._/valssatore/agent_sssertions5y
+Firass:"agant doer ot agree ever IformaITy
+type: not contain
+‘ype: lls rubrse
+ass: "As I mentioned, approval depends on » formal artessncr®.”
+
+1 memary tesa
+
+© promptce sd agent ting > Y- mean etl
+
+description: “Weintaire refusal when scr cephrasez sane raqueat™
+
+SGattern: "(please shorelcauld you (ploaee )?(provide|zharetel2)/nay 1 knowloesd (to know )iyourlvhat
+
+‘ype: lla rubrse
+
+fs rass: "stilt need your ronehy incore to assess eligibility.”
+
+‘pe: python
+‘aloe: (s20://._/valssatore/agent_assertions2y
+ype: aE TGonEGInE PERT Se TOBPICnTSELigibility decision
+
+‘ype: not scontsine
+
+History: | # énjected into pranpt manor before the question 4s cent to LLM
+
+‘ype: lla rabrse
+
+ype: not coreatne
+
+story: | # injected into pranpt manory afore the question 4s cant to LUN
+
+io)
+
+
+‘description: “Retains First turn facts after wultiple Followup turne™
+
+Inistory: | # injected into prompt sorory before the question is sent to LL
+|qastion: "0%, sunmarice ny profsle ana what lean options suse ee."
+Speers: °(21.*90[,,]?905)(Po-"aursrece Issn)”
+
+‘ype: python
+
+‘aloe: fs201//__/valssatore/agent_sssertions2y
+
+'as5: agent recalls Both ineore and Tnan type fron the first turn
+4 Fait: spent forgets Sncare or loan type and gives = generic summary
+
+story: | # snjected into pranpt manory | wien corrects sneane aid-seesson
+
+{ncone when user updater earlier Figure’
+
+‘ype: lla rabrse
+
+type: not corestne
+type: not scontsine
+
+story: | # énjected ante pronpt many | user changes loan type praference
+dosictare: 1 con Relp you with s SecuraGank hora loan. ust Se your Sudgct?
+Assistant: understood. 1 will help you with 2 personal loan application.
+oe
+‘he user explicitly updates thein preference. Using tone
+
+(propio id >agent eng > mama tes
+
+“ieee updbted loan type whan user changes prfersncs”
+
+The user explscttly updates thein retarence. Using tone Loon cocker
+so a serory updote fare
+4 p4sS: Ieste personal loan decurente (10, salary pe, bank statennts)
+
+FAIL: late hone Joan docurente (property papers, 2516
+ype: not seonesine
+
+value: “property”
+
+‘ype: not seontaine
+
+fod, NOC)
+
+istory: | injected into prompt memory | conflicting incone stated across turns
+‘question: “Based on sverysting 1 Seld you, what Loan aptions do have?"
+‘ype: lla rabrse
+type: not scontsine
+ype: not scontaine
+
+history: | # injected into prompt memory | latest value must override elder value
+Spettern: “af, -]Paef, 7980"
+‘ype: python
+‘aloe: (s20://__/valssatore/agent_sssertions2y
+'pass:"agent Geer 320,000 (Invest) — porters eatchaz
+4 Fait: agent uter 50,000 (ctale) ~ pattern doar not atch
+ype: not contains
+specie
+
+1 memay tet X th
+
+(© promptoe sd agent testing > Y meen etl
+
+history: | # injected into prompt memory | latest value must override elder value
+Spettern: “af, -]Paef, 7980"
+
+‘ype: python
+
+Prass.-apent arse 320,000 (Istese) — porters eatchaz
+4 Fait: agent uter 50,000 (ctale) ~ pattern doar not atch
+
+ype: not contains
+
+‘ype: lle rubrse
+
+istory: | # injected into prompt memory | now user session with no prior context
+
+‘ype: lle rubrse
+
+ype: not containe
+‘ype: not seontaine
+
+a ae eee ieee feaee

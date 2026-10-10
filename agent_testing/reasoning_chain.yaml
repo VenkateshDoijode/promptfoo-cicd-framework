@@ -1,0 +1,135 @@
+A # agent Reaconing Cain Tests — Securedani AL eeistants
+2° ft validates that the agent reasons correctly through sulti-eriteris decisions,
+3 # doce not skip steps, and server at the right conclusion
+2 suthors venkatesbeara Bios
+Gf assertions: alt “typa: python” aazertions use file://__/valsdatore/apontsecerttonepy
+3 # wenaconto TinesioLos (Securdank policy ~ update 46 policy change):
+aetna dncone ‘ie 20,050 /noneh (personal), DS 3
+250 Manu foe loan age: 6570 years at matursty
+Xe + promtfon eval config confige/agent.yanl \
+274 eases agant_testing/reasoningschsinnyoed \
+38 env file environeonte/dev en |
+19 output raports/jean/agent-restoning-dev-json --no-cathe
+25 description: “Reasons correctly through all eligibility erstersa”
+30 _pattern! "(etigible|quaiity|eritersa|sncone|Ci8i |eredit score)
+2 ‘ype: lla rabrse
+a” ‘The agent must evaluate ald four criteria: age (28 — within range)
+= sncore (55,200 - meets ninirun), E1BIL sare’ (720 moots minsnur of 700),
+» and work cuperdence (3 years — neste nininun of 2 years). He ust not 2kip
+= 1 Fass: agent sethedscally checks all eriteria and giver 2 grounded anower
+= 4 Fait: spent skipe CISIL score or work experiance and giver wrong conelusion
+7 type: not contain
+‘pe: python
+‘aloe: (s201//._/valssatore/agent_sssertionsoy
+‘ype: lla rubrse
+= fay the applscane 4s eligioie. 18 ust clearly explain whseh erstersa
+= 58) agent cnplsins bath failing erigeria clearly
+= 4 FaiL: agent approver or antes the CISEL / experience tazuce
+= ype: not contains
+a ype: not coreatne
+
+"reasoning chinyar
+(© prompted > agent eng > Y remaning inal
+
+ypes not contatne
+
+description: “handles torderlsne clépsbslity without fabetcating 2 deeision®
+oe
+definitively approve or reject ~ st should rarcerens applying and auaiting
+
+description: “Explains Qu reatoning with corcect factor identification"
+_ pattern: "(prineipal|intercst| tenure)
+
+‘he agent rust explain that OM depends on three factors: principal (40 Iskhe),
+smeerert rate (E34 p-2-), and tenure (20 yours = 240 ronthe). Ze should
+
+PASS: expiaine the formula and factors correctly
+
+‘ype: python
+
+aloe: fs2e://../valssatore/apen
+
+44 Added deterninistic chock ~ "a5" suse appear (28
+Tpareorns (| tenure| 35 1ain|25iathe outstanding)
+
+fs § = 28 lakhs outstanding)
+
+n
+
+(© promptoe sl agent tein > Y remain cna
+
+description: “seasons thrauph prepayeent Sepace carracly™
+
+‘ype: lla rabrse
+
+25 tains, whieh typically cfther rosucee the HH (Sf tenure t= fed) oe
+hortene the tanure (af UH sz fised). goth euteonoe should Be explasned
+4 Fass: explains both sconarser clearly
+
+‘pe: python
+
+‘aloe: (s201//.-/valsdatore/agent_sssertionsoy
+
+description: “spplies floating ve fixed rate logic correctly"
+
+‘ype: lla rabrse
+
+1 pass: correctly idontafice fleating rate ~ na penalty
+
+4 Fait: Spplsce fexea rate penalty rales tos floating cate loan
+type: contains
+
+ype: not contains
+
+fluc: spensity applies”
+
+‘ype: not coreatne
+
+aloe: "penalty will apy"
+
+‘ype: not coreatne
+
+4s Agent ust sontion ape-conctrasned fapure (25 or 20 years) OF age/maturity reasoning
+
+{fe (eter 21): word boungarice stiod’~ the old Sare “age” eatched inside sagen’ "esssage"
+{fo "he asinue tenure $2.20 years. Gur agent will..." parsed. (No not dgaasns "39 years”
+43 correct reply say cite the Jo_yoor prosuct satinas bofore applying the age Litt.)
+Tpaeeorns "835|29)\2"([te) \er(yeare |yre2)\a|\eagela|\aratursey\)\eesre
+
+‘ype: lle rubrse
+
+‘the agent must reaton that tenure is constrained by both the product maximum
+(Ge years for nore loans) and the applicant's age st maturity (loan wast
+sypically cloze by 2g¢ cso). tor 9 50-yoar ald, the effective axinu
+fener 2 fe yar not 8 yeas: Th agnesbuté oie tne
+
+aloe: fites//. A
+
+sdators/agant_sssertions.oy
+
+2 Oe Oth ee E
+
+
+157 - description: “Correctly chains loan type to tenure lisit
+
+ve ‘he agent mart ceasan that tanure iz cansrained by both the product soxinue
+
+B (Ge years for nore loans) and the applicant's age st maturity (loan wast
+
+a sypically cloze by 2g¢ cso). tor 9 50-yoar ald, the effective axinu
+fener 2 fe yar not 8 yeas: Th agnesbuté oie tne
+
+” type: python
+
+a ‘aloe: (s201//._/valssatore/agent_assertions2y
+
+HS __puttern: "(fraud|nelpLine|neport|imraciatlyjasclaze)
+
+he agent must idan fy bath indicators (unewpected Joan EAE notice and
+udder CISIL drop) ar strang 2igne of identsey fraud. It nuct eacalate
+
+ype: python
+
+‘iluc: fide //./valédators/agent_arsertions.py
+
+1 FAIL: agent offers advtce on how £0 proceed partially assists
