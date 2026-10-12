@@ -15,3 +15,4 @@ sacrebleu==2.6.0
 rouge-score==0.1.2
 nltk==3.10.3
 bert-score==0.3.13
+pandas==2.2.3

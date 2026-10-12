@@ -1,9 +1,9 @@
 """
-compare_runs_csv.py - Compare two PromptFoo CSV result files to detect regressions.
+compare_runs_csv.py - Compare two Promptfoo CSV result files to detect regressions.
 Author: Venkateshwara Doijode
 
 Usage:
-    python scripts/compare_runs_csv.py \
+    python analysis/compare_runs_csv.py \
         --baseline reports/csv/regression_prod_20250101.csv \
         --current  reports/csv/regression_prod_20250102.csv
 
@@ -14,216 +14,144 @@ Output:
     - Overall pass rate change
 
 Expected CSV columns (Promptfoo default export):
-    Description, provider (or embedded in a "[provider] label" column),
-    Status (Pass/Fail), Score
+    Description, Provider, Status (Pass/Fail), Score
 
-    Generate with:
-        promptfoo eval --output reports/csv/results.csv
+Generate with:
+    promptfoo eval --output reports/csv/results.csv
 """
 
+from __future__ import annotations
+
 import argparse
-import csv
 import sys
 from pathlib import Path
+
+import pandas as pd
 
 # Ensure Unicode output works on Windows consoles (cp1252 etc.)
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # ---------------------------------------------------------------------------
-# Column-name aliases - PromptFoo has varied its header names across versions.
-# All comparisons are case-insensitive after normalisation.
+# Column-name aliases - Promptfoo has varied its header names across versions.
 # ---------------------------------------------------------------------------
-_DESCRIPTION_ALIASES = {"description", "desc", "test", "test name", "testname"}
-_PROVIDER_ALIASES = {"provider", "model", "provider label"}
-_PASS_ALIASES = {"pass", "status", "success", "passed", "result"}
+_DESC_ALIASES  = {"description", "desc", "test", "test name", "testname"}
+_PASS_ALIASES  = {"pass", "status", "success", "passed", "result"}
 _SCORE_ALIASES = {"score", "metric", "grade", "value"}
+_PROV_ALIASES  = {"provider", "model", "provider label"}
+
+# Promptfoo pass/fail cell values considered a passing result
+_PASS_VALUES   = {"true", "pass", "passed", "yes", "1", "success"}
+
+_SEPARATOR_WIDTH = 60
 
 
-def _normalise(s: str) -> str:
-    return s.strip().lower()
+def _find_col(cols: list[str], aliases: set[str]) -> str | None:
+    """Return first column header matching an alias (case-insensitive)."""
+    return next((c for c in cols if c.strip().lower() in aliases), None)
 
 
-def _find_col(headers: list[str], aliases: set[str]) -> str | None:
-    """Return the first header that matches one of the aliases (case-insensitive)."""
-    for h in headers:
-        if _normalise(h) in aliases:
-            return h
-    return None
-
-
-def _parse_bool(value: str) -> bool:
-    """Convert various pass/fail representations to bool."""
-    v = value.strip().lower()
-    if v in {"true", "pass", "passed", "yes", "1", "success"}:
-        return True
-    if v in {"false", "fail", "failed", "no", "0", "failure", "error"}:
-        return False
-    # Promptfoo sometimes writes 'Pass' / 'Fail' with a capital
-    if v.startswith("pass"):
-        return True
-    return False
-
-
-def load(path: str) -> list[dict]:
-    """Read the CSV and return a list of row dicts with normalised keys."""
+def load(path: str) -> pd.DataFrame:
+    """Read CSV and return a normalised DataFrame with columns:
+    description, provider, pass (bool), score (float)."""
     p = Path(path)
     if not p.exists():
         print(f"[ERROR] File not found: {p}")
         sys.exit(1)
 
-    with open(p, newline="", encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-        if reader.fieldnames is None:
-            print(f"[ERROR] CSV appears to be empty: {p}")
-            sys.exit(1)
+    df = pd.read_csv(p, encoding="utf-8-sig")
+    cols = list(df.columns)
 
-        headers = list(reader.fieldnames)
+    desc_col  = _find_col(cols, _DESC_ALIASES)
+    pass_col  = _find_col(cols, _PASS_ALIASES)
+    score_col = _find_col(cols, _SCORE_ALIASES)
+    prov_col  = _find_col(cols, _PROV_ALIASES)
 
-        # Locate required columns
-        desc_col = _find_col(headers, _DESCRIPTION_ALIASES)
-        pass_col = _find_col(headers, _PASS_ALIASES)
-        score_col = _find_col(headers, _SCORE_ALIASES)
-        prov_col = _find_col(headers, _PROVIDER_ALIASES)
+    missing = [n for n, c in [("description", desc_col),
+                               ("pass/status", pass_col),
+                               ("score",       score_col)] if c is None]
+    if missing:
+        print(f"[ERROR] Missing column(s) in {p}: {missing}")
+        print(f"        Available headers: {cols}")
+        sys.exit(1)
 
-        missing = [
-            name for name, col in [
-                ("description", desc_col),
-                ("pass/status", pass_col),
-                ("score", score_col),
-            ]
-            if col is None
-        ]
-        if missing:
-            print(f"[ERROR] Could not find required column(s) in {p}:")
-            for m in missing:
-                print(f"    - {m}")
-            print(f"    Available headers: {headers}")
-            print(
-                "    Adjust column names in your CSV or edit the alias lists "
-                "at the top of this script."
-            )
-            sys.exit(1)
+    df = df.rename(columns={desc_col: "description", pass_col: "pass", score_col: "score"})
+    df["provider"]    = df[prov_col].fillna("").astype(str) if prov_col else ""
+    # L1: strip whitespace from description - trailing spaces cause missed matches in join
+    df["description"] = df["description"].astype(str).str.strip()
+    df["pass"]        = df["pass"].astype(str).str.strip().str.lower().isin(_PASS_VALUES)
+    df["score"]       = pd.to_numeric(df["score"], errors="coerce").fillna(0.0).round(2)
 
-        rows = []
-        for row in reader:
-            rows.append({
-                "description": row.get(desc_col, "").strip(),
-                "provider": row.get(prov_col, "").strip() if prov_col else "",
-                "pass": _parse_bool(row.get(pass_col, "false")),
-                "score": _safe_float(row.get(score_col, "0")),
-            })
+    # L2: use fillna("") so NaN descriptions (null cells) also trigger this warning
+    if df["description"].fillna("").eq("").any():
+        print("[WARN] Rows with empty description found - may collide during comparison.")
 
-        return rows
-
-
-def _safe_float(value: str) -> float:
-    try:
-        return float(value.strip())
-    except (ValueError, AttributeError):
-        return 0.0
-
-
-def extract_results(rows: list[dict]) -> dict:
-    """Return a dict keyed by (description, provider) -> row dict."""
-    index = {}
-    for r in rows:
-        key = (r["description"], r["provider"])
-        if key in index:
-            print(
-                f"    [WARN] Duplicate key (description='{key[0]}', provider='{key[1]}') "
-                "- second row overwrites first. Consider adding unique descriptions."
-            )
-        index[key] = r
-    return index
+    return df[["description", "provider", "pass", "score"]]
 
 
 def compare(baseline_path: str, current_path: str) -> None:
-    baseline_rows = load(baseline_path)
-    current_rows = load(current_path)
+    b_df = load(baseline_path)
+    c_df = load(current_path)
 
-    baseline = extract_results(baseline_rows)
-    current = extract_results(current_rows)
+    b = b_df.set_index(["description", "provider"])
+    c = c_df.set_index(["description", "provider"])
 
-    # regressions - tests that PASSED in baseline but FAIL in current run.
-    regressions = []
+    merged = b.join(c, how="outer", lsuffix="_b", rsuffix="_c")
 
-    # improvements - tests that FAILED in baseline but PASS in current run.
-    improvements = []
+    # New / removed tests
+    for (desc, prov), _ in merged[merged["pass_b"].isna()].iterrows():
+        print(f"  [NEW]  {desc} | {prov}")
+    for (desc, prov), _ in merged[merged["pass_c"].isna()].iterrows():
+        print(f"  [GONE] {desc} | {prov}")
 
-    # score_changes - same pass/fail but numeric score shifted.
-    score_changes = []
+    # C4: outer join promotes bool columns to float64/object when NaN is introduced.
+    # After dropna() the NaN rows are gone but dtype stays promoted - ~float64 crashes.
+    # Cast back to bool explicitly before any boolean operations.
+    both = merged.dropna().copy()
+    both["pass_b"] = both["pass_b"].astype(bool)
+    both["pass_c"] = both["pass_c"].astype(bool)
 
-    all_keys = set(baseline) | set(current)
+    regressions  = both[ both["pass_b"] & ~both["pass_c"]]
+    improvements = both[~both["pass_b"] &  both["pass_c"]]
+    score_chg    = both[(both["pass_b"] == both["pass_c"]) &
+                        (both["score_b"] != both["score_c"])]
 
-    for key in sorted(all_keys):
-        desc, provider = key
-        b = baseline.get(key)
-        c = current.get(key)
+    b_passes, b_total = int(b_df["pass"].sum()), len(b_df)
+    c_passes, c_total = int(c_df["pass"].sum()), len(c_df)
+    b_rate = b_passes / b_total * 100 if b_total else 0
+    c_rate = c_passes / c_total * 100 if c_total else 0
 
-        if b is None:
-            print(f"  [NEW] {desc} | {provider}")
-            continue
-        if c is None:
-            print(f"  [GONE] {desc} | {provider}")
-            continue
-
-        b_pass = b["pass"]
-        c_pass = c["pass"]
-        b_score = round(b["score"], 2)
-        c_score = round(c["score"], 2)
-
-        if b_pass and not c_pass:
-            regressions.append((desc, provider, b_score, c_score))
-        elif not b_pass and c_pass:
-            improvements.append((desc, provider, b_score, c_score))
-        elif b_score != c_score:
-            score_changes.append((desc, provider, b_score, c_score))
-
-    # --- Summary stats (computed from CSV rows directly) ---------------------
-    def _stats(rows: list[dict]) -> tuple[int, int]:
-        """Return (passes, total)."""
-        total = len(rows)
-        passes = sum(1 for r in rows if r["pass"])
-        return passes, total
-
-    b_passes, b_total = _stats(baseline_rows)
-    c_passes, c_total = _stats(current_rows)
-
-    b_rate = (b_passes / b_total * 100) if b_total else 0
-    c_rate = (c_passes / c_total * 100) if c_total else 0
-
-    print("\n" + "=" * 60)
+    print("\n" + "=" * _SEPARATOR_WIDTH)
     print("COMPARISON SUMMARY")
-    print("=" * 60)
-    print(f"  Baseline pass rate : {b_rate:.1f}% ({b_passes}/{b_total})")
-    print(f"  Current pass rate  : {c_rate:.1f}% ({c_passes}/{c_total})")
+    print("=" * _SEPARATOR_WIDTH)
+    print(f"  Baseline pass rate : {b_rate:.1f}%  ({b_passes}/{b_total})")
+    print(f"  Current pass rate  : {c_rate:.1f}%  ({c_passes}/{c_total})")
     print(f"  Change             : {c_rate - b_rate:+.1f}%")
 
-    if regressions:
+    def _label(desc: str, prov: str) -> str:
+        return f"{desc} | ({prov})" if prov else desc
+
+    if not regressions.empty:
         print(f"\n  REGRESSIONS ({len(regressions)}) - tests that newly failed:")
-        for desc, provider, b, c in regressions:
-            label = f"{desc} | {provider}" if provider else desc
-            print(f"    \u2717 {label} ({b} \u2192 {c})")
+        for (desc, prov), row in regressions.iterrows():
+            print(f"    \u2717 {_label(desc, prov)}  ({row.score_b} \u2192 {row.score_c})")
 
-    if improvements:
+    if not improvements.empty:
         print(f"\n  IMPROVEMENTS ({len(improvements)}) - tests that newly passed:")
-        for desc, provider, b, c in improvements:
-            label = f"{desc} | {provider}" if provider else desc
-            print(f"    \u2713 {label} ({b} \u2192 {c})")
+        for (desc, prov), row in improvements.iterrows():
+            print(f"    \u2713 {_label(desc, prov)}  ({row.score_b} \u2192 {row.score_c})")
 
-    if score_changes:
-        print(f"\n  SCORE CHANGES ({len(score_changes)}):")
-        for desc, provider, b, c in score_changes:
-            label = f"{desc} | {provider}" if provider else desc
-            print(f"    ~ {label} ({b} \u2192 {c})")
+    if not score_chg.empty:
+        print(f"\n  SCORE CHANGES ({len(score_chg)}):")
+        for (desc, prov), row in score_chg.iterrows():
+            print(f"    ~ {_label(desc, prov)}  ({row.score_b} \u2192 {row.score_c})")
 
-    if not regressions and not improvements and not score_changes:
+    if regressions.empty and improvements.empty and score_chg.empty:
         print("\n  No changes detected between runs.")
 
-    print("=" * 60)
+    print("=" * _SEPARATOR_WIDTH)
 
-    if regressions:
+    if not regressions.empty:
         print("\n[FAIL] Regressions detected. Review before release.")
         sys.exit(1)
     else:
@@ -231,17 +159,9 @@ def compare(baseline_path: str, current_path: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Compare two Promptfoo CSV result files."
-    )
-    parser.add_argument(
-        "--baseline", required=True,
-        help="Path to baseline CSV result (promptfoo eval --output baseline.csv)"
-    )
-    parser.add_argument(
-        "--current", required=True,
-        help="Path to current CSV result (promptfoo eval --output current.csv)"
-    )
+    parser = argparse.ArgumentParser(description="Compare two Promptfoo CSV result files.")
+    parser.add_argument("--baseline", required=True, help="Path to baseline CSV result")
+    parser.add_argument("--current",  required=True, help="Path to current CSV result")
     args = parser.parse_args()
     compare(args.baseline, args.current)
 
