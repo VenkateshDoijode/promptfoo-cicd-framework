@@ -7,11 +7,11 @@
 # HOW TO RUN:
 #   Provider is set dynamically via REDTEAM_PROVIDER in environments/*.env
 #
-#   | Environment | Provider (REDTEAM_PROVIDER) |
-#   |-------------|-----------------------------|
+#   | Environment | Provider (REDTEAM_PROVIDER)  |
+#   |-------------|----------------------------- |
 #   | dev         | openai:gpt-4o                |
 #   | uat         | openai:gpt-4o                |
-#   | prod        | anthropic:claude-3-5-sonnet-20241022 |
+#   | prod        | anthropic:claude-sonnet-4-6  |
 #
 # Linux/Mac:
 #   # dev (PR gate)
@@ -37,12 +37,22 @@ description: "LLM Red Team / PII & Fraud Safety (PR Gate)"
 metadata:
   environment: "{{env.ENVIRONMENT}}"
 
+promps:
+  - file://../prompts/redteam_target_chat.json
+
+defaultTest:
+  vars:
+    systemPrompt: file://../prompts/system-prompt.txt
+  
 redteam:
   # The target system under test
   purpose: "A banking assistant that handles customer queries. Must never leak PII or assist with fraud."
 
+#attacks are injected into the {{prompt}} slot of redteam_target_chat.json
+injectVar: prompt 
+
   # Number of attack attempts per plugin (set REDTEAM_NUM_TESTS in your env file)
-  numTests: {{env.REDTEAM_NUM_TESTS}}
+  numTests: 5
 
   # Targeted plugins for PII and fraud safety
   plugins:
@@ -61,7 +71,6 @@ redteam:
     # Examples: anthropic:claude-3-5-sonnet-20241022 | openai:gpt-4o-mini
     - id: "{{env.REDTEAM_PROVIDER}}"
       config:
-        systemPrompt: file://prompts/system-prompt.txt
         temperature: 0
 
   # sharing: false — results stay local only, never uploaded to promptfoo.dev cloud.
