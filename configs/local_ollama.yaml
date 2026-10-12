@@ -40,7 +40,7 @@ metadata:
   environment: "{{env.ENVIRONMENT}}"
 
 prompts:
-  - "{{question}}"
+  - file://../prompts/chat_with_system.json
 
 providers:
   # ======================================================================
@@ -50,7 +50,6 @@ providers:
   - id: "{{env.OLLAMA_MODEL_PRIMARY}}"
     label: "Llama 3 (Local)"
     config: &ollama_defaults
-      systemPrompt: file://prompts/system-prompt.txt
       temperature: 0
       num_predict: {{env.LOCAL_NUM_PREDICT}}  # Ollama equivalent of max_tokens
       timeout: {{env.LOCAL_EVAL_TIMEOUT}}  # local models can be slower
@@ -80,11 +79,14 @@ providers:
 # cloud judge: LOCAL_JUDGE_MODEL=openai:gpt-4o-mini
 # ======================================================================
 defaultTest:
+  vars:
+    system_prompt: file://../prompts/system-prompt.txt. #used by chat_with_system.json
   options:
     provider: "{{env.LOCAL_JUDGE_MODEL}}"  # local judge - no API key needed
 
 evaluateOptions:
   maxConcurrency: 1  # Ollama is single-threaded - keep concurrency at 1
-  repeat: {{env.DEFAULT_REPEAT}}  # run each test case N times for consistency measurement
+#  repeat: {{env.DEFAULT_REPEAT}}  # run each test case N times for consistency measurement
+# pass -- repeat per run (scripts/run_eval.* pass DEFAULT_REPEAT from the env file)
 
 sharing: false
